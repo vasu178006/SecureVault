@@ -14,7 +14,7 @@ namespace SecureVault.UI.UserControls
         private readonly ActivityLogService _logService = new();
         private readonly UserService _userService = new();
         private StyledDataGridView _grid = null!;
-        private ComboBox _userFilter = null!;
+        private StyledComboBox _userFilter = null!;
         private DateTimePicker _dateFrom = null!;
         private DateTimePicker _dateTo = null!;
         private List<Models.User> _allUsers = new();
@@ -54,10 +54,8 @@ namespace SecureVault.UI.UserControls
                 BackColor = Color.Transparent
             };
             filterFlow.Controls.Add(new Label { Text = "User:", Font = AppTheme.BodyRegular, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, AutoSize = true, Margin = new Padding(0, 12, 5, 0) });
-            _userFilter = new ComboBox
+            _userFilter = new StyledComboBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList, BackColor = AppTheme.SurfaceDark,
-                ForeColor = AppTheme.TextPrimary, Font = AppTheme.BodyRegular,
                 Size = new Size(200, 30), Margin = new Padding(0, 8, 10, 0)
             };
             _userFilter.Items.Add("All Users");

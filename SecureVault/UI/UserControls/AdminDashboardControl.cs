@@ -119,8 +119,7 @@ namespace SecureVault.UI.UserControls
         private Panel CreateStatCard(string icon, string title, int value, Color gradStart, Color gradEnd, long storageBytes = -1, string? label = null)
         {
             bool isHovered = false;
-            var card = new Panel { Size = new Size(240, 120), Margin = new Padding(0, 0, 15, 10), BackColor = Color.Transparent, Cursor = Cursors.Hand };
-            var valueLabel = new Label { Font = AppTheme.HeadingLarge, ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent, AutoSize = true, Location = new Point(70, 40) };
+            var card = new Panel { Size = new Size(260, 140), Margin = new Padding(0, 0, 15, 10), BackColor = Color.Transparent, Cursor = Cursors.Hand };
 
             card.Paint += (s, e) =>
             {
@@ -130,8 +129,7 @@ namespace SecureVault.UI.UserControls
                 using var path = AppTheme.CreateRoundedRect(rect, AppTheme.RadiusMedium);
                 using var bg = new SolidBrush(isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark);
                 e.Graphics.FillPath(bg, path);
-                int borderAlpha = isHovered ? 60 : 30;
-                using var border = new Pen(Color.FromArgb(borderAlpha, 255, 255, 255), isHovered ? 1.5f : 1f);
+                using var border = new Pen(isHovered ? Color.FromArgb(80, AppTheme.AccentGlow.R, AppTheme.AccentGlow.G, AppTheme.AccentGlow.B) : AppTheme.SurfaceBorder, isHovered ? 1.2f : 1f);
                 e.Graphics.DrawPath(border, path);
                 var accent = new Rectangle(0, 0, card.Width - 1, 4);
                 using var ap = AppTheme.CreateRoundedRect(accent, 2);
@@ -139,25 +137,66 @@ namespace SecureVault.UI.UserControls
                 e.Graphics.FillPath(ab, ap);
             };
 
-            // Hover effect
             void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
             void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
             card.MouseEnter += OnEnter;
             card.MouseLeave += OnLeave;
 
-            var iconLabel = new Label { Text = icon, Font = EmojiFont, ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent, AutoSize = true, Location = new Point(18, 35) };
+            // Inner layout using TableLayoutPanel — no hardcoded positions
+            var inner = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 2,
+                BackColor = Color.Transparent,
+                Padding = new Padding(16, 14, 16, 10),
+                Margin = new Padding(0)
+            };
+            inner.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
+            inner.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            inner.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
+            inner.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+            inner.MouseEnter += OnEnter;
+            inner.MouseLeave += OnLeave;
+
+            var iconLabel = new Label
+            {
+                Text = icon, Font = EmojiFont,
+                ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
+                UseCompatibleTextRendering = false, Margin = new Padding(0)
+            };
             iconLabel.MouseEnter += OnEnter;
             iconLabel.MouseLeave += OnLeave;
-            card.Controls.Add(iconLabel);
+            inner.Controls.Add(iconLabel, 0, 0);
+            inner.SetRowSpan(iconLabel, 2);
 
+            var valueLabel = new Label
+            {
+                Font = AppTheme.HeadingLarge,
+                ForeColor = AppTheme.TextPrimary,
+                BackColor = Color.Transparent,
+                AutoSize = false, Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.BottomLeft,
+                UseCompatibleTextRendering = false, Margin = new Padding(0)
+            };
             valueLabel.MouseEnter += OnEnter;
             valueLabel.MouseLeave += OnLeave;
-            card.Controls.Add(valueLabel);
+            inner.Controls.Add(valueLabel, 1, 0);
 
-            var titleLabel = new Label { Text = title, Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, AutoSize = true, Location = new Point(70, 75) };
+            var titleLabel = new Label
+            {
+                Text = title, Font = AppTheme.BodySmall,
+                ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent,
+                AutoSize = false, Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopLeft,
+                UseCompatibleTextRendering = false, Margin = new Padding(0, 2, 0, 0)
+            };
             titleLabel.MouseEnter += OnEnter;
             titleLabel.MouseLeave += OnLeave;
-            card.Controls.Add(titleLabel);
+            inner.Controls.Add(titleLabel, 1, 1);
+
+            card.Controls.Add(inner);
 
             if (label != null) valueLabel.Text = label;
             else if (storageBytes >= 0) AnimationHelper.AnimateStorageCounter(valueLabel, storageBytes, 800);

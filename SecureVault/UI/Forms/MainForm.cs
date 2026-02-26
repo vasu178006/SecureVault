@@ -65,7 +65,8 @@ namespace SecureVault.UI.Forms
                 Width = SIDEBAR_WIDTH,
                 Dock = DockStyle.Left,
                 BackColor = AppTheme.SidebarBg,
-                Padding = new Padding(0)
+                Padding = new Padding(0),
+                Margin = new Padding(0)
             };
             _sidebarPanel.Paint += (s, e) =>
             {
@@ -79,14 +80,14 @@ namespace SecureVault.UI.Forms
             {
                 Dock = DockStyle.Top,
                 Height = 65,
-                BackColor = Color.Transparent
+                BackColor = AppTheme.SidebarBg
             };
             var logoLabel = new Label
             {
                 Text = "🔒 SecureVault",
                 Font = new Font(AppTheme.FontFamily, 16, FontStyle.Bold),
                 ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent,
+                BackColor = AppTheme.SidebarBg,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter
             };
@@ -102,7 +103,7 @@ namespace SecureVault.UI.Forms
                 FlowDirection = FlowDirection.TopDown,
                 WrapContents = false,
                 AutoScroll = true,
-                BackColor = Color.Transparent,
+                BackColor = AppTheme.SidebarBg,
                 Padding = new Padding(8, 10, 8, 10)
             };
 
@@ -119,7 +120,7 @@ namespace SecureVault.UI.Forms
 
             if (SessionManager.IsAdmin)
             {
-                _sidebarFlow.Controls.Add(new Panel { Height = 8, Width = SIDEBAR_WIDTH - 20, BackColor = Color.Transparent });
+                _sidebarFlow.Controls.Add(new Panel { Height = 8, Width = SIDEBAR_WIDTH - 20, BackColor = AppTheme.SidebarBg });
                 _sidebarFlow.Controls.Add(new Panel { Height = 1, Width = SIDEBAR_WIDTH - 40, BackColor = AppTheme.SurfaceBorder, Margin = new Padding(10, 0, 10, 0) });
                 _sidebarFlow.Controls.Add(MakeSectionLabel("ADMIN", AppTheme.AccentPink));
                 _btnAdminDashboard = MakeSidebarBtn("Admin Dashboard", "⚡");
@@ -156,7 +157,8 @@ namespace SecureVault.UI.Forms
                 Height = TOPBAR_HEIGHT,
                 Dock = DockStyle.Top,
                 BackColor = AppTheme.PrimaryDark,
-                Padding = new Padding(20, 0, 20, 0)
+                Padding = new Padding(20, 0, 20, 0),
+                Margin = new Padding(0)
             };
             _topBar.Paint += (s, e) =>
             {
@@ -219,7 +221,8 @@ namespace SecureVault.UI.Forms
                 Padding = new Padding(0)
             };
 
-            // Add in correct Z-order: sidebar left, then topbar top in remaining, then content fills
+            // Dock order: sidebar added last = highest priority = full height left.
+            // TopBar fills width to right of sidebar. Content fills remaining.
             Controls.Add(_contentPanel);
             Controls.Add(_topBar);
             Controls.Add(_sidebarPanel);
@@ -247,7 +250,7 @@ namespace SecureVault.UI.Forms
                 Text = $"  {text}",
                 Font = new Font(AppTheme.FontFamily, 8, FontStyle.Bold),
                 ForeColor = color,
-                BackColor = Color.Transparent,
+                BackColor = AppTheme.SidebarBg,
                 AutoSize = false,
                 Width = SIDEBAR_WIDTH - 20,
                 Height = 25,

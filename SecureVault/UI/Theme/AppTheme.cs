@@ -123,6 +123,25 @@ namespace SecureVault.UI.Theme
         }
 
         /// <summary>
+        /// Resolves the effective (non-transparent) background color
+        /// by walking up the parent control chain.
+        /// </summary>
+        public static Color GetEffectiveBackColor(Control? control)
+        {
+            while (control != null)
+            {
+                if (control.BackColor != Color.Transparent &&
+                    control.BackColor != Color.Empty &&
+                    control.BackColor.A > 0)
+                {
+                    return control.BackColor;
+                }
+                control = control.Parent;
+            }
+            return PrimaryDark;
+        }
+
+        /// <summary>
         /// Paints a glass-morphism style card background.
         /// </summary>
         public static void PaintGlassCard(Graphics g, Rectangle bounds, int radius = RadiusMedium, int shadowDepth = 6)
@@ -138,7 +157,7 @@ namespace SecureVault.UI.Theme
             g.FillPath(fillBrush, path);
 
             // Subtle border
-            using var borderPen = new Pen(Color.FromArgb(40, 255, 255, 255), 1f);
+            using var borderPen = new Pen(SurfaceBorder, 1f);
             g.DrawPath(borderPen, path);
         }
     }

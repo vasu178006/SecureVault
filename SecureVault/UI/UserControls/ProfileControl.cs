@@ -20,6 +20,7 @@ namespace SecureVault.UI.UserControls
         private RoundedTextBox _emailBox = null!;
         private PictureBox _profilePic = null!;
         private string? _profileImagePath;
+        private string _userInitials = "?";
 
         public ProfileControl()
         {
@@ -33,6 +34,9 @@ namespace SecureVault.UI.UserControls
             Controls.Clear();
             var user = SessionManager.CurrentUser;
             if (user == null) return;
+
+            // Compute initials for avatar placeholder
+            _userInitials = GetInitials(user.FullName);
 
             // Root scrollable
             var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.Transparent };
@@ -67,7 +71,7 @@ namespace SecureVault.UI.UserControls
             // Profile card
             var card = new Panel
             {
-                Size = new Size(520, 480),
+                Size = new Size(520, 510),
                 BackColor = Color.Transparent,
                 Margin = new Padding(0)
             };
@@ -82,16 +86,16 @@ namespace SecureVault.UI.UserControls
                 ColumnCount = 1,
                 RowCount = 10,
                 BackColor = Color.Transparent,
-                Padding = new Padding(25, 20, 25, 15)
+                Padding = new Padding(28, 24, 28, 20)
             };
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 100)); // Profile row (pic + info)
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Stats row
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 15));  // Spacer
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 110)); // Profile row (pic + info)
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));  // Stats row
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));  // Spacer
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Name label
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));  // Name input
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Email label
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));  // Email input
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 15));  // Spacer
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));  // Spacer
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Buttons
             inner.RowStyles.Add(new RowStyle(SizeType.Percent, 100));  // Fill
             card.Controls.Add(inner);
@@ -104,23 +108,27 @@ namespace SecureVault.UI.UserControls
                 RowCount = 3,
                 BackColor = Color.Transparent
             };
-            profileRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95));
+            profileRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
             profileRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            profileRow.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+            profileRow.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
+            profileRow.RowStyles.Add(new RowStyle(SizeType.Percent, 30));
 
             _profilePic = new PictureBox
             {
-                Size = new Size(75, 75),
+                Size = new Size(80, 80),
                 SizeMode = PictureBoxSizeMode.StretchImage,
-                BackColor = AppTheme.SurfaceMid,
+                BackColor = Color.Transparent,
                 Cursor = Cursors.Hand,
-                Margin = new Padding(0, 5, 10, 0)
+                Margin = new Padding(0, 8, 12, 0)
             };
-            MakeCircular(_profilePic);
-            if (!string.IsNullOrEmpty(user.ProfileImagePath) && File.Exists(user.ProfileImagePath))
+            bool hasImage = !string.IsNullOrEmpty(user.ProfileImagePath) && File.Exists(user.ProfileImagePath);
+            if (hasImage)
             {
                 _profilePic.Image = Image.FromFile(user.ProfileImagePath);
                 _profileImagePath = user.ProfileImagePath;
             }
+            SetupAvatarPaint(_profilePic, hasImage);
             _profilePic.Click += ChangeProfilePicture;
             profileRow.SetRowSpan(_profilePic, 3);
             profileRow.Controls.Add(_profilePic, 0, 0);
@@ -129,19 +137,21 @@ namespace SecureVault.UI.UserControls
             {
                 Text = user.FullName, Font = AppTheme.HeadingSmall,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
-                AutoSize = true, Margin = new Padding(0, 10, 0, 0)
+                AutoSize = true, Margin = new Padding(0, 12, 0, 2)
             }, 1, 0);
             profileRow.Controls.Add(new Label
             {
                 Text = user.Role, Font = AppTheme.BodyRegular,
                 ForeColor = user.IsAdmin ? AppTheme.AccentPink : AppTheme.AccentTeal,
-                BackColor = Color.Transparent, AutoSize = true
+                BackColor = Color.Transparent, AutoSize = true,
+                Margin = new Padding(0, 2, 0, 2)
             }, 1, 1);
             profileRow.Controls.Add(new Label
             {
                 Text = $"Member since {user.CreatedAt:MMMM yyyy}",
                 Font = AppTheme.BodySmall, ForeColor = AppTheme.TextMuted,
-                BackColor = Color.Transparent, AutoSize = true
+                BackColor = Color.Transparent, AutoSize = true,
+                Margin = new Padding(0, 2, 0, 0)
             }, 1, 2);
             inner.Controls.Add(profileRow, 0, 0);
 
@@ -158,13 +168,13 @@ namespace SecureVault.UI.UserControls
             {
                 Text = $"📂 {docCount} Documents", Font = AppTheme.BodyLarge,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
-                AutoSize = true, Margin = new Padding(0, 5, 30, 0)
+                AutoSize = true, Margin = new Padding(0, 8, 30, 0)
             });
             statsFlow.Controls.Add(new Label
             {
                 Text = $"💾 {AnimationHelper.FormatBytes(storage)} Used", Font = AppTheme.BodyLarge,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
-                AutoSize = true, Margin = new Padding(0, 5, 0, 0)
+                AutoSize = true, Margin = new Padding(0, 8, 0, 0)
             });
             inner.Controls.Add(statsFlow, 0, 1);
 
@@ -220,14 +230,72 @@ namespace SecureVault.UI.UserControls
             {
                 _profileImagePath = ofd.FileName;
                 _profilePic.Image = Image.FromFile(ofd.FileName);
+                SetupAvatarPaint(_profilePic, true);
+                _profilePic.Invalidate();
             }
         }
 
-        private void MakeCircular(PictureBox pb)
+        private void SetupAvatarPaint(PictureBox pb, bool hasImage)
         {
-            using var path = new GraphicsPath();
-            path.AddEllipse(0, 0, pb.Width, pb.Height);
-            pb.Region = new Region(path);
+            // Remove previous paint handlers (avoid stacking)
+            pb.Paint += (s, e) =>
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                int w = pb.Width, h = pb.Height;
+                using var circlePath = new GraphicsPath();
+                circlePath.AddEllipse(0, 0, w - 1, h - 1);
+
+                if (pb.Image != null)
+                {
+                    // Circular-cropped image
+                    g.SetClip(circlePath);
+                    g.DrawImage(pb.Image, 0, 0, w, h);
+                    g.ResetClip();
+                }
+                else
+                {
+                    // Gradient avatar placeholder with initials
+                    var gradRect = new Rectangle(0, 0, w, h);
+                    using var gradBrush = new LinearGradientBrush(gradRect,
+                        AppTheme.GradientStart, AppTheme.GradientEnd, 135f);
+                    g.FillPath(gradBrush, circlePath);
+
+                    // Draw initials
+                    using var initialsFont = new Font(AppTheme.FontFamily, 22, FontStyle.Bold);
+                    using var textBrush = new SolidBrush(Color.White);
+                    var sf = new StringFormat
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    g.DrawString(_userInitials, initialsFont, textBrush,
+                        new RectangleF(0, 0, w, h), sf);
+                }
+
+                // Themed border ring
+                using var borderPen = new Pen(AppTheme.SurfaceBorder, 1.5f);
+                g.DrawEllipse(borderPen, 1, 1, w - 3, h - 3);
+
+                // Fill outside the circle with parent background (anti-alias cleanup)
+                var bgColor = AppTheme.GetEffectiveBackColor(pb.Parent);
+                using var bgBrush = new SolidBrush(bgColor);
+                using var outerRegion = new Region(new Rectangle(0, 0, w, h));
+                outerRegion.Exclude(circlePath);
+                g.FillRegion(bgBrush, outerRegion);
+            };
+        }
+
+        private static string GetInitials(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName)) return "?";
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+                return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[^1][0])}";
+            return char.ToUpper(parts[0][0]).ToString();
         }
 
         private Label MakeLabel(string text) => new()
@@ -238,3 +306,4 @@ namespace SecureVault.UI.UserControls
         };
     }
 }
+

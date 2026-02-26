@@ -17,9 +17,9 @@ namespace SecureVault.UI.UserControls
         private readonly CategoryService _catService = new();
         private StyledDataGridView _grid = null!;
         private RoundedTextBox _searchBox = null!;
-        private ComboBox _categoryFilter = null!;
-        private ComboBox _typeFilter = null!;
-        private ComboBox _sortFilter = null!;
+        private StyledComboBox _categoryFilter = null!;
+        private StyledComboBox _typeFilter = null!;
+        private StyledComboBox _sortFilter = null!;
         private Label _countLabel = null!;
         private List<Document> _documents = new();
 
@@ -45,7 +45,7 @@ namespace SecureVault.UI.UserControls
                 Padding = new Padding(15, 10, 15, 10)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));   // Filter bar
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));   // Filter bar
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));   // Count label
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // Grid
             Controls.Add(root);
@@ -63,8 +63,8 @@ namespace SecureVault.UI.UserControls
             _searchBox = new RoundedTextBox
             {
                 PlaceholderText = "🔍 Search documents...",
-                Size = new Size(260, 40),
-                Margin = new Padding(0, 7, 10, 0)
+                Size = new Size(260, 36),
+                Margin = new Padding(0, 8, 8, 0)
             };
             _searchBox.TextChanged += (s, e) => LoadDocuments();
             filterFlow.Controls.Add(_searchBox);
@@ -92,7 +92,7 @@ namespace SecureVault.UI.UserControls
                 IsGradient = false,
                 FlatColor = AppTheme.SurfaceMid,
                 CornerRadius = 8,
-                Margin = new Padding(10, 9, 0, 0)
+                Margin = new Padding(8, 8, 0, 0)
             };
             exportBtn.Click += ExportButton_Click;
             filterFlow.Controls.Add(exportBtn);
@@ -271,15 +271,10 @@ namespace SecureVault.UI.UserControls
             }
         }
 
-        private ComboBox CreateComboBox(int width) => new()
+        private StyledComboBox CreateComboBox(int width) => new()
         {
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            BackColor = AppTheme.SurfaceDark,
-            ForeColor = AppTheme.TextPrimary,
-            FlatStyle = FlatStyle.Flat,
-            Font = AppTheme.BodyRegular,
             Size = new Size(width, 36),
-            Margin = new Padding(0, 9, 10, 0)
+            Margin = new Padding(0, 8, 8, 0)
         };
     }
 
@@ -304,7 +299,7 @@ namespace SecureVault.UI.UserControls
         private RoundedTextBox _nameBox = null!;
         private RoundedTextBox _descBox = null!;
         private RoundedTextBox _tagsBox = null!;
-        private ComboBox _catCombo = null!;
+        private StyledComboBox _catCombo = null!;
         private CheckBox _importantCheck = null!;
         private List<Category> _cats = new();
 
@@ -350,11 +345,9 @@ namespace SecureVault.UI.UserControls
             layout.Controls.Add(_tagsBox, 0, r++);
 
             layout.Controls.Add(MakeLabel("Category"), 0, r++);
-            _catCombo = new ComboBox
+            _catCombo = new StyledComboBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill,
-                BackColor = AppTheme.SurfaceDark, ForeColor = AppTheme.TextPrimary,
-                Font = AppTheme.BodyRegular
+                Dock = DockStyle.Fill
             };
             _catCombo.Items.Add("None");
             _cats = _catService.GetCategories(SessionManager.CurrentUserID);

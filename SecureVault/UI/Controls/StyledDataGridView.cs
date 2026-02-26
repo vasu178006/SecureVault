@@ -31,6 +31,8 @@ namespace SecureVault.UI.Controls
             ColumnHeadersHeight = 45;
             RowTemplate.Height = 42;
             EnableHeadersVisualStyles = false;
+            ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             DoubleBuffered = true;
             Font = AppTheme.BodyRegular;
 

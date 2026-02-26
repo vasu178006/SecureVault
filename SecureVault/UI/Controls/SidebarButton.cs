@@ -62,7 +62,7 @@ namespace SecureVault.UI.Controls
         {
             var g = pevent.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Parent?.BackColor ?? AppTheme.SidebarBg);
+            g.Clear(AppTheme.GetEffectiveBackColor(Parent));
 
             var rect = ClientRectangle;
 

@@ -38,6 +38,8 @@ namespace SecureVault.UI.Controls
 
             if (CornerRadius > 0)
             {
+                // Clear with parent's effective color to avoid black corners
+                g.Clear(AppTheme.GetEffectiveBackColor(Parent));
                 using var path = AppTheme.CreateRoundedRect(rect, CornerRadius);
                 g.FillPath(brush, path);
             }

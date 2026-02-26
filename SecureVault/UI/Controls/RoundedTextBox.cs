@@ -101,10 +101,10 @@ namespace SecureVault.UI.Controls
 
             _placeholderLabel.Click += (s, e) => _textBox.Focus();
 
-            // Add placeholder first (back), then textbox (front)
-            Controls.Add(_placeholderLabel);
+            // Add textbox first (back), then placeholder on top (front)
             Controls.Add(_textBox);
-            _textBox.BringToFront();
+            Controls.Add(_placeholderLabel);
+            _placeholderLabel.BringToFront();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -139,7 +139,7 @@ namespace SecureVault.UI.Controls
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Parent?.BackColor ?? AppTheme.PrimaryDark);
+            g.Clear(AppTheme.GetEffectiveBackColor(Parent));
 
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
             using var path = AppTheme.CreateRoundedRect(rect, CornerRadius);

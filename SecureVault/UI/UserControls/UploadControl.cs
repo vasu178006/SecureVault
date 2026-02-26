@@ -15,7 +15,7 @@ namespace SecureVault.UI.UserControls
     {
         private readonly DocumentService _docService = new();
         private readonly CategoryService _catService = new();
-        private ComboBox _categoryCombo = null!;
+        private StyledComboBox _categoryCombo = null!;
         private RoundedTextBox _descBox = null!;
         private RoundedTextBox _tagsBox = null!;
         private Label _statusLabel = null!;
@@ -132,11 +132,10 @@ namespace SecureVault.UI.UserControls
             optionsLayout.Controls.Add(new Label { Text = "Category", Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
             optionsLayout.Controls.Add(new Label { Text = "Description", Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 1, 0);
 
-            _categoryCombo = new ComboBox
+            _categoryCombo = new StyledComboBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill,
-                BackColor = AppTheme.SurfaceDark, ForeColor = AppTheme.TextPrimary,
-                Font = AppTheme.BodyRegular, Margin = new Padding(0, 2, 10, 2)
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 2, 10, 2)
             };
             _categoryCombo.Items.Add("None");
             try { foreach (var cat in _catService.GetCategories(SessionManager.CurrentUserID)) _categoryCombo.Items.Add(cat.CategoryName); } catch { }

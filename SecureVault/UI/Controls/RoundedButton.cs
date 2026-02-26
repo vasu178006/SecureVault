@@ -74,7 +74,7 @@ namespace SecureVault.UI.Controls
         {
             var g = pevent.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Parent?.BackColor ?? AppTheme.PrimaryDark);
+            g.Clear(AppTheme.GetEffectiveBackColor(Parent));
 
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
 
@@ -104,7 +104,7 @@ namespace SecureVault.UI.Controls
             // Glow border on hover
             if (_isHovered)
             {
-                using var glowPen = new Pen(Color.FromArgb(80, 255, 255, 255), 1.5f);
+                using var glowPen = new Pen(Color.FromArgb(80, AppTheme.AccentGlow.R, AppTheme.AccentGlow.G, AppTheme.AccentGlow.B), 1.5f);
                 g.DrawPath(glowPen, path);
             }
 
