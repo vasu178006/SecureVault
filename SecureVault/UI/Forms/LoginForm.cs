@@ -25,20 +25,20 @@ namespace SecureVault.UI.Forms
         public LoginForm()
         {
             Text = "SecureVault – Login";
-            Size = new Size(1100, 700);
+            Size = new Size(480, 620);
             StartPosition = FormStartPosition.CenterScreen;
-            FormBorderStyle = FormBorderStyle.FixedSingle;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
+            MinimizeBox = false;
             BackColor = AppTheme.PrimaryDark;
             DoubleBuffered = true;
             AutoScaleMode = AutoScaleMode.None;
-            Font = new Font(AppTheme.FontFamily, 10);
 
             Paint += PaintBackground;
             BuildUI();
             Load += (s, e) =>
             {
-                AnimationHelper.FadeIn(this, 500);
+                AnimationHelper.FadeIn(this, 400);
                 StartBackgroundAnimation();
             };
         }
@@ -60,25 +60,26 @@ namespace SecureVault.UI.Forms
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // Base gradient
-            using var baseBrush = AppTheme.CreatePrimaryGradient(ClientRectangle, 135f);
+            // Base gradient (same as RegisterForm)
+            using var baseBrush = new LinearGradientBrush(ClientRectangle,
+                AppTheme.PrimaryDark, AppTheme.PrimaryMid, 90f);
             g.FillRectangle(baseBrush, ClientRectangle);
 
             // Animated ambient orbs
-            float orb1X = (float)(Math.Sin(_bgAnimPhase) * 80 - 60);
-            float orb1Y = (float)(Math.Cos(_bgAnimPhase * 0.7) * 60 - 60);
+            float orb1X = (float)(Math.Sin(_bgAnimPhase) * 60 - 40);
+            float orb1Y = (float)(Math.Cos(_bgAnimPhase * 0.7) * 40 - 40);
             using var c1 = new SolidBrush(Color.FromArgb(12, 167, 139, 250));
-            g.FillEllipse(c1, orb1X, orb1Y, 450, 450);
+            g.FillEllipse(c1, orb1X, orb1Y, 300, 300);
 
-            float orb2X = Width - 250 + (float)(Math.Cos(_bgAnimPhase * 0.5) * 50);
-            float orb2Y = Height - 250 + (float)(Math.Sin(_bgAnimPhase * 0.8) * 40);
+            float orb2X = Width - 180 + (float)(Math.Cos(_bgAnimPhase * 0.5) * 35);
+            float orb2Y = Height - 180 + (float)(Math.Sin(_bgAnimPhase * 0.8) * 30);
             using var c2 = new SolidBrush(Color.FromArgb(10, 59, 130, 246));
-            g.FillEllipse(c2, orb2X, orb2Y, 400, 400);
+            g.FillEllipse(c2, orb2X, orb2Y, 280, 280);
 
-            float orb3X = Width / 2 + (float)(Math.Sin(_bgAnimPhase * 1.2) * 100);
-            float orb3Y = Height / 3 + (float)(Math.Cos(_bgAnimPhase * 0.6) * 70);
+            float orb3X = Width / 2 + (float)(Math.Sin(_bgAnimPhase * 1.2) * 60);
+            float orb3Y = Height / 3 + (float)(Math.Cos(_bgAnimPhase * 0.6) * 50);
             using var c3 = new SolidBrush(Color.FromArgb(8, 244, 114, 182));
-            g.FillEllipse(c3, orb3X, orb3Y, 300, 300);
+            g.FillEllipse(c3, orb3X, orb3Y, 200, 200);
         }
 
         private void BuildUI()
@@ -99,15 +100,14 @@ namespace SecureVault.UI.Forms
             outer.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
             Controls.Add(outer);
 
-            // Glass card panel
+            // Glass card panel (matched to RegisterForm sizing)
             var card = new Panel
             {
-                Size = new Size(440, 510),
-                BackColor = Color.Transparent,
-                Margin = new Padding(0)
+                Size = new Size(420, 500),
+                BackColor = Color.Transparent
             };
             card.Paint += (s, e) => AppTheme.PaintGlassCard(e.Graphics,
-                new Rectangle(0, 0, card.Width - 1, card.Height - 1), AppTheme.RadiusLarge, 10);
+                new Rectangle(0, 0, card.Width - 1, card.Height - 1), AppTheme.RadiusLarge);
             outer.Controls.Add(card, 1, 1);
 
             // Inner layout inside card
@@ -115,42 +115,46 @@ namespace SecureVault.UI.Forms
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 11,
                 BackColor = Color.Transparent,
-                Padding = new Padding(32, 30, 32, 24)
+                Padding = new Padding(30, 28, 30, 20)
             };
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // Shield icon
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));   // Shield icon
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));   // Title
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));   // Subtitle
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // Subtitle
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Email label
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));   // Email box
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Email input
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Pass label
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));   // Pass box
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // Error label
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Login button
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Pass input
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // Error label
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // Login button
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));   // Register link
+            inner.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // Fill
             card.Controls.Add(inner);
+
+            int row = 0;
 
             // Row 0: Shield icon
             inner.Controls.Add(new Label
             {
                 Text = "🛡️",
-                Font = new Font("Segoe UI Emoji", 24),
+                Font = new Font("Segoe UI Emoji", 22),
                 ForeColor = AppTheme.TextPrimary,
                 BackColor = Color.Transparent,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter
-            }, 0, 0);
+            }, 0, row++);
 
             // Row 1: Title
             inner.Controls.Add(new Label
             {
                 Text = "SecureVault",
-                Font = AppTheme.HeadingLarge,
+                Font = AppTheme.HeadingMedium,
                 ForeColor = AppTheme.TextPrimary,
                 BackColor = Color.Transparent,
                 Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.TopCenter
-            }, 0, 1);
+                TextAlign = ContentAlignment.MiddleCenter
+            }, 0, row++);
 
             // Row 2: Subtitle
             inner.Controls.Add(new Label
@@ -161,32 +165,21 @@ namespace SecureVault.UI.Forms
                 BackColor = Color.Transparent,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.TopCenter
-            }, 0, 2);
+            }, 0, row++);
 
             // Row 3: Email label
-            inner.Controls.Add(MakeFieldLabel("Email Address"), 0, 3);
+            inner.Controls.Add(MakeLabel("Email Address"), 0, row++);
 
             // Row 4: Email input
-            _emailBox = new RoundedTextBox
-            {
-                PlaceholderText = "Enter your email",
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0, 0, 0, 4)
-            };
-            inner.Controls.Add(_emailBox, 0, 4);
+            _emailBox = MakeInput("Enter your email");
+            inner.Controls.Add(_emailBox, 0, row++);
 
             // Row 5: Password label
-            inner.Controls.Add(MakeFieldLabel("Password"), 0, 5);
+            inner.Controls.Add(MakeLabel("Password"), 0, row++);
 
             // Row 6: Password input
-            _passwordBox = new RoundedTextBox
-            {
-                PlaceholderText = "Enter your password",
-                IsPassword = true,
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0, 0, 0, 4)
-            };
-            inner.Controls.Add(_passwordBox, 0, 6);
+            _passwordBox = MakeInput("Enter your password", true);
+            inner.Controls.Add(_passwordBox, 0, row++);
 
             // Row 7: Error label
             _errorLabel = new Label
@@ -198,20 +191,23 @@ namespace SecureVault.UI.Forms
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            inner.Controls.Add(_errorLabel, 0, 7);
+            inner.Controls.Add(_errorLabel, 0, row++);
 
-            // Row 8: Login button
+            // Row 8: Login button (accent colors matching RegisterForm)
             _loginButton = new RoundedButton
             {
                 Text = "Sign In",
                 Dock = DockStyle.Fill,
-                CornerRadius = AppTheme.RadiusMedium,
-                Margin = new Padding(0, 4, 0, 0)
+                ButtonColorStart = AppTheme.AccentTeal,
+                ButtonColorEnd = AppTheme.AccentCyan,
+                HoverColorStart = Color.FromArgb(40, 204, 186),
+                HoverColorEnd = Color.FromArgb(26, 202, 232),
+                Margin = new Padding(0, 4, 0, 4)
             };
             _loginButton.Click += LoginButton_Click;
-            inner.Controls.Add(_loginButton, 0, 8);
+            inner.Controls.Add(_loginButton, 0, row++);
 
-            // Register link (below card)
+            // Row 9: Register link (inside card)
             _registerLink = new LinkLabel
             {
                 Text = "Don't have an account? Sign Up",
@@ -220,27 +216,27 @@ namespace SecureVault.UI.Forms
                 ActiveLinkColor = AppTheme.AccentTeal,
                 BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleCenter,
-                AutoSize = true,
-                Margin = new Padding(0, 12, 0, 0),
-                Anchor = AnchorStyles.Top
+                Dock = DockStyle.Fill
             };
             _registerLink.LinkClicked += (s, e) => new RegisterForm().ShowDialog(this);
-            outer.Controls.Add(_registerLink, 1, 2);
+            inner.Controls.Add(_registerLink, 0, row++);
 
             // Enter key
             KeyPreview = true;
             KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) LoginButton_Click(this, EventArgs.Empty); };
         }
 
-        private Label MakeFieldLabel(string text) => new()
+        private Label MakeLabel(string text) => new()
         {
-            Text = text,
-            Font = AppTheme.BodySmall,
-            ForeColor = AppTheme.TextSecondary,
-            BackColor = Color.Transparent,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.BottomLeft,
-            Margin = new Padding(2, 0, 0, 0)
+            Text = text, Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary,
+            BackColor = Color.Transparent, Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.BottomLeft
+        };
+
+        private RoundedTextBox MakeInput(string placeholder, bool isPassword = false) => new()
+        {
+            PlaceholderText = placeholder, IsPassword = isPassword,
+            Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 4)
         };
 
         private void LoginButton_Click(object? sender, EventArgs e)
