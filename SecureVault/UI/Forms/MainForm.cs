@@ -144,11 +144,11 @@ namespace SecureVault.UI.Forms
             _btnLogout.Click += (s, e) => PerformLogout();
             logoutPanel.Controls.Add(_btnLogout);
 
-            // Assemble sidebar (order matters: bottom first, then top, then fill)
-            _sidebarPanel.Controls.Add(_sidebarFlow);   // Fill
-            _sidebarPanel.Controls.Add(sep);             // Top (after logo)
-            _sidebarPanel.Controls.Add(logoPanel);       // Top
+            // Assemble sidebar (order matters for Dock: bottom first, then tops, then fill last)
             _sidebarPanel.Controls.Add(logoutPanel);     // Bottom
+            _sidebarPanel.Controls.Add(logoPanel);       // Top
+            _sidebarPanel.Controls.Add(sep);             // Top (after logo)
+            _sidebarPanel.Controls.Add(_sidebarFlow);   // Fill
 
             // ── TOPBAR: Dock.Top, fixed height ──
             _topBar = new Panel
@@ -185,6 +185,8 @@ namespace SecureVault.UI.Forms
                 RowCount = 2,
                 BackColor = Color.Transparent
             };
+            userInfoPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 55));
+            userInfoPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 45));
             _userNameLabel = new Label
             {
                 Text = SessionManager.CurrentUser?.FullName ?? "User",
@@ -192,8 +194,8 @@ namespace SecureVault.UI.Forms
                 ForeColor = AppTheme.TextPrimary,
                 BackColor = Color.Transparent,
                 AutoSize = true,
-                Anchor = AnchorStyles.Right,
-                Margin = new Padding(0, 12, 0, 0)
+                Anchor = AnchorStyles.Right | AnchorStyles.Bottom,
+                Margin = new Padding(0, 0, 0, 0)
             };
             _userRoleLabel = new Label
             {
@@ -202,7 +204,7 @@ namespace SecureVault.UI.Forms
                 ForeColor = AppTheme.AccentTeal,
                 BackColor = Color.Transparent,
                 AutoSize = true,
-                Anchor = AnchorStyles.Right,
+                Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Margin = new Padding(0, 2, 0, 0)
             };
             userInfoPanel.Controls.Add(_userNameLabel, 0, 0);

@@ -50,7 +50,7 @@ namespace SecureVault.UI.Theme
         // ── Sidebar Colors ──
         public static readonly Color SidebarBg = Color.FromArgb(18, 18, 35);         // Dark sidebar
         public static readonly Color SidebarHover = Color.FromArgb(35, 35, 60);      // Hover highlight
-        public static readonly Color SidebarActive = Color.FromArgb(108, 59, 170, 80); // Active item (semi-transparent purple)
+        public static readonly Color SidebarActive = Color.FromArgb(80, 108, 59, 170);  // Active item (semi-transparent purple)
 
         // ── Font ──
         public static readonly string FontFamily = "Segoe UI";

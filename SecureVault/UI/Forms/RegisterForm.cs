@@ -22,7 +22,7 @@ namespace SecureVault.UI.Forms
         public RegisterForm()
         {
             Text = "SecureVault – Register";
-            Size = new Size(480, 620);
+            Size = new Size(480, 660);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -139,6 +139,10 @@ namespace SecureVault.UI.Forms
             };
             _registerButton.Click += RegisterButton_Click;
             inner.Controls.Add(_registerButton, 0, row);
+
+            // Enter key submits the form
+            KeyPreview = true;
+            KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) RegisterButton_Click(this, EventArgs.Empty); };
         }
 
         private Label MakeLabel(string text) => new()

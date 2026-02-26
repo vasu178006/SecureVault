@@ -225,7 +225,7 @@ namespace SecureVault.UI.UserControls
 
         private void MakeCircular(PictureBox pb)
         {
-            var path = new GraphicsPath();
+            using var path = new GraphicsPath();
             path.AddEllipse(0, 0, pb.Width, pb.Height);
             pb.Region = new Region(path);
         }

@@ -38,7 +38,8 @@ namespace SecureVault.UI.Controls
 
             SetStyle(ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.UserPaint |
-                     ControlStyles.DoubleBuffer, true);
+                     ControlStyles.DoubleBuffer |
+                     ControlStyles.ResizeRedraw, true);
         }
 
         protected override void OnMouseEnter(EventArgs e)

@@ -21,7 +21,7 @@ namespace SecureVault.UI.Forms
         public ChangePasswordForm()
         {
             Text = "Change Password";
-            Size = new Size(420, 400);
+            Size = new Size(420, 420);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -32,6 +32,10 @@ namespace SecureVault.UI.Forms
 
             BuildUI();
             Load += (s, e) => AnimationHelper.FadeIn(this, 300);
+
+            // Enter key submits
+            KeyPreview = true;
+            KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) ChangeButton_Click(this, EventArgs.Empty); };
         }
 
         private void BuildUI()
@@ -44,15 +48,15 @@ namespace SecureVault.UI.Forms
                 BackColor = Color.Transparent,
                 Padding = new Padding(30, 20, 30, 20)
             };
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));  // Title
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Title
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Input
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));  // Error
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Button
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));  // Error
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));  // Button
             Controls.Add(layout);
 
             int r = 0;

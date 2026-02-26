@@ -65,7 +65,7 @@ namespace SecureVault.UI.Controls
                 BackColor = AppTheme.SurfaceDark,
                 ForeColor = AppTheme.TextPrimary,
                 Font = AppTheme.BodyLarge,
-                Dock = DockStyle.Fill
+                Anchor = AnchorStyles.None  // Manual positioning, not Dock
             };
 
             _placeholderLabel = new Label
@@ -101,8 +101,9 @@ namespace SecureVault.UI.Controls
 
             _placeholderLabel.Click += (s, e) => _textBox.Focus();
 
-            Controls.Add(_textBox);
+            // Add placeholder first (back), then textbox (front)
             Controls.Add(_placeholderLabel);
+            Controls.Add(_textBox);
             _textBox.BringToFront();
         }
 
@@ -110,12 +111,28 @@ namespace SecureVault.UI.Controls
         {
             base.OnLoad(e);
             _placeholderLabel.Text = PlaceholderText;
+            PositionTextBox();
+            UpdatePlaceholder();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            _placeholderLabel.Text = PlaceholderText;
+            PositionTextBox();
             UpdatePlaceholder();
         }
 
         private void UpdatePlaceholder()
         {
             _placeholderLabel.Visible = string.IsNullOrEmpty(_textBox.Text) && !_isFocused;
+        }
+
+        private void PositionTextBox()
+        {
+            if (_textBox == null) return;
+            _textBox.Width = Width - Padding.Left - Padding.Right;
+            _textBox.Location = new Point(Padding.Left, (Height - _textBox.Height) / 2);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -141,9 +158,7 @@ namespace SecureVault.UI.Controls
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            if (_textBox == null) return;
-            _textBox.Location = new Point(Padding.Left, (Height - _textBox.Height) / 2);
-            _textBox.Width = Width - Padding.Left - Padding.Right;
+            PositionTextBox();
         }
 
         /// <summary>

@@ -15,6 +15,8 @@ namespace SecureVault.UI.Controls
     {
         private bool _isHovered;
         private bool _isActive;
+        private static readonly Font IconFont = new("Segoe UI Emoji", 14);
+
         public string IconText { get; set; } = "📄"; // Emoji or text icon
         public bool IsActive
         {
@@ -38,7 +40,8 @@ namespace SecureVault.UI.Controls
 
             SetStyle(ControlStyles.AllPaintingInWmPaint |
                      ControlStyles.UserPaint |
-                     ControlStyles.DoubleBuffer, true);
+                     ControlStyles.DoubleBuffer |
+                     ControlStyles.ResizeRedraw, true);
         }
 
         protected override void OnMouseEnter(EventArgs e)
@@ -66,15 +69,16 @@ namespace SecureVault.UI.Controls
             // Background
             if (_isActive)
             {
-                // Active: gradient accent bar + subtle background
-                using var bgBrush = new SolidBrush(Color.FromArgb(30, AppTheme.GradientStart.R, AppTheme.GradientStart.G, AppTheme.GradientStart.B));
+                // Active: gradient accent bar + semi-transparent purple background
+                using var bgBrush = new SolidBrush(AppTheme.SidebarActive);
                 using var bgPath = AppTheme.CreateRoundedRect(new Rectangle(4, 2, rect.Width - 8, rect.Height - 4), 8);
                 g.FillPath(bgBrush, bgPath);
 
-                // Left accent bar
+                // Left accent bar with gradient
                 using var accentBrush = new LinearGradientBrush(
                     new Rectangle(0, 0, 4, rect.Height), AppTheme.GradientStart, AppTheme.GradientEnd, 90f);
-                g.FillRectangle(accentBrush, 0, 6, 3, rect.Height - 12);
+                using var accentPath = AppTheme.CreateRoundedRect(new Rectangle(0, 6, 3, rect.Height - 12), 2);
+                g.FillPath(accentBrush, accentPath);
             }
             else if (_isHovered)
             {
@@ -83,14 +87,16 @@ namespace SecureVault.UI.Controls
                 g.FillPath(hoverBrush, hoverPath);
             }
 
-            // Icon
+            // Icon — use shared static font to avoid allocation per paint
             Color textColor = _isActive ? AppTheme.TextPrimary : (_isHovered ? AppTheme.TextPrimary : AppTheme.TextSecondary);
-            TextRenderer.DrawText(g, IconText, new Font("Segoe UI Emoji", 14), new Point(16, (rect.Height - 24) / 2), textColor);
+            TextRenderer.DrawText(g, IconText, IconFont, new Point(16, (rect.Height - 24) / 2), textColor);
 
-            // Text
+            // Text — active items use bold
+            var textFont = _isActive ? new Font(Font, FontStyle.Bold) : Font;
             var textRect = new Rectangle(50, 0, rect.Width - 60, rect.Height);
-            TextRenderer.DrawText(g, Text, Font, textRect, textColor,
+            TextRenderer.DrawText(g, Text, textFont, textRect, textColor,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left);
+            if (_isActive) textFont.Dispose();
         }
     }
 }

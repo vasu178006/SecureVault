@@ -15,12 +15,14 @@ namespace SecureVault.UI.Theme
         /// </summary>
         public static void FadeIn(Form form, int durationMs = 400)
         {
+            if (durationMs <= 0) { form.Opacity = 1; return; }
             form.Opacity = 0;
             var timer = new System.Windows.Forms.Timer { Interval = 15 };
             double step = 1.0 / (durationMs / 15.0);
 
             timer.Tick += (s, e) =>
             {
+                if (form.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 form.Opacity += step;
                 if (form.Opacity >= 1)
                 {
@@ -37,6 +39,7 @@ namespace SecureVault.UI.Theme
         /// </summary>
         public static void SlideInFromLeft(Control control, int targetX, int durationMs = 350)
         {
+            if (durationMs <= 0) { control.Left = targetX; control.Visible = true; return; }
             int startX = -control.Width;
             control.Left = startX;
             control.Visible = true;
@@ -47,6 +50,7 @@ namespace SecureVault.UI.Theme
 
             timer.Tick += (s, e) =>
             {
+                if (control.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 currentStep++;
                 double progress = EaseOutCubic((double)currentStep / totalSteps);
                 control.Left = startX + (int)((targetX - startX) * progress);
@@ -66,6 +70,7 @@ namespace SecureVault.UI.Theme
         /// </summary>
         public static void SlideInFromRight(Control control, int targetX, int containerWidth, int durationMs = 350)
         {
+            if (durationMs <= 0) { control.Left = targetX; control.Visible = true; return; }
             int startX = containerWidth;
             control.Left = startX;
             control.Visible = true;
@@ -76,6 +81,7 @@ namespace SecureVault.UI.Theme
 
             timer.Tick += (s, e) =>
             {
+                if (control.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 currentStep++;
                 double progress = EaseOutCubic((double)currentStep / totalSteps);
                 control.Left = startX + (int)((targetX - startX) * progress);
@@ -96,12 +102,14 @@ namespace SecureVault.UI.Theme
         public static void AnimateCounter(Label label, int targetValue, string? prefix = null,
             string? suffix = null, int durationMs = 800)
         {
+            if (durationMs <= 0) { label.Text = $"{prefix}{targetValue}{suffix}"; return; }
             var timer = new System.Windows.Forms.Timer { Interval = 20 };
             int totalSteps = durationMs / 20;
             int currentStep = 0;
 
             timer.Tick += (s, e) =>
             {
+                if (label.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 currentStep++;
                 double progress = EaseOutCubic((double)currentStep / totalSteps);
                 int currentVal = (int)(targetValue * progress);
@@ -122,12 +130,14 @@ namespace SecureVault.UI.Theme
         /// </summary>
         public static void AnimateStorageCounter(Label label, long targetBytes, int durationMs = 800)
         {
+            if (durationMs <= 0) { label.Text = FormatBytes(targetBytes); return; }
             var timer = new System.Windows.Forms.Timer { Interval = 20 };
             int totalSteps = durationMs / 20;
             int currentStep = 0;
 
             timer.Tick += (s, e) =>
             {
+                if (label.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 currentStep++;
                 double progress = EaseOutCubic((double)currentStep / totalSteps);
                 long currentVal = (long)(targetBytes * progress);
@@ -144,13 +154,15 @@ namespace SecureVault.UI.Theme
         }
 
         /// <summary>
-        /// Fades a control's opacity via its BackColor alpha (for panels).
+        /// Fades a control in using a height grow animation (WinForms substitute for opacity fade).
         /// </summary>
         public static void FadeInControl(Control control, int durationMs = 300)
         {
             control.Visible = true;
-            // For WinForms, we use a size animation as a fade-in substitute
+            if (durationMs <= 0) return;
+
             int targetHeight = control.Height;
+            if (targetHeight <= 0) return;
             control.Height = 0;
 
             var timer = new System.Windows.Forms.Timer { Interval = 15 };
@@ -159,6 +171,7 @@ namespace SecureVault.UI.Theme
 
             timer.Tick += (s, e) =>
             {
+                if (control.IsDisposed) { timer.Stop(); timer.Dispose(); return; }
                 currentStep++;
                 double progress = EaseOutCubic((double)currentStep / totalSteps);
                 control.Height = (int)(targetHeight * progress);

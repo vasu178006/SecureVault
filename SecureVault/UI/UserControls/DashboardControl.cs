@@ -14,6 +14,9 @@ namespace SecureVault.UI.UserControls
     public class DashboardControl : UserControl
     {
         private readonly DocumentService _docService = new();
+        private static readonly Font EmojiFont = new("Segoe UI Emoji", 20);
+        private static readonly Font EmojiSmallFont = new("Segoe UI Emoji", 14);
+        private static readonly Font FileNameFont = new(AppTheme.FontFamily, 10);
 
         public DashboardControl()
         {
@@ -137,7 +140,7 @@ namespace SecureVault.UI.UserControls
                 else
                 {
                     foreach (var doc in recentDocs)
-                        recentFlow.Controls.Add(CreateDocRow(doc, scroll.Width - 80));
+                        recentFlow.Controls.Add(CreateDocRow(doc, ClientSize.Width - 80));
                 }
             }
             catch { }
@@ -178,7 +181,7 @@ namespace SecureVault.UI.UserControls
                 else
                 {
                     foreach (var doc in importantDocs.Take(5))
-                        impFlow.Controls.Add(CreateDocRow(doc, scroll.Width - 80));
+                        impFlow.Controls.Add(CreateDocRow(doc, ClientSize.Width - 80));
                 }
             }
             catch { }
@@ -188,11 +191,13 @@ namespace SecureVault.UI.UserControls
         private Panel CreateStatCard(string icon, string title, int value,
             Color gradStart, Color gradEnd, long storageBytes = -1)
         {
+            bool isHovered = false;
             var card = new Panel
             {
                 Size = new Size(240, 120),
                 Margin = new Padding(0, 0, 15, 10),
-                BackColor = Color.Transparent
+                BackColor = Color.Transparent,
+                Cursor = Cursors.Hand
             };
 
             var valueLabel = new Label
@@ -208,11 +213,12 @@ namespace SecureVault.UI.UserControls
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
-                AppTheme.DrawShadow(e.Graphics, rect, AppTheme.RadiusMedium, 5);
+                AppTheme.DrawShadow(e.Graphics, rect, AppTheme.RadiusMedium, isHovered ? 7 : 5);
                 using var path = AppTheme.CreateRoundedRect(rect, AppTheme.RadiusMedium);
-                using var bg = new SolidBrush(AppTheme.SurfaceDark);
+                using var bg = new SolidBrush(isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark);
                 e.Graphics.FillPath(bg, path);
-                using var border = new Pen(Color.FromArgb(30, 255, 255, 255), 1f);
+                int borderAlpha = isHovered ? 60 : 30;
+                using var border = new Pen(Color.FromArgb(borderAlpha, 255, 255, 255), isHovered ? 1.5f : 1f);
                 e.Graphics.DrawPath(border, path);
                 var accent = new Rectangle(0, 0, card.Width - 1, 4);
                 using var ap = AppTheme.CreateRoundedRect(accent, 2);
@@ -220,19 +226,35 @@ namespace SecureVault.UI.UserControls
                 e.Graphics.FillPath(ab, ap);
             };
 
-            card.Controls.Add(new Label
+            // Hover effect
+            void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
+            void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
+            card.MouseEnter += OnEnter;
+            card.MouseLeave += OnLeave;
+
+            var iconLabel = new Label
             {
-                Text = icon, Font = new Font("Segoe UI Emoji", 20),
+                Text = icon, Font = EmojiFont,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
                 AutoSize = true, Location = new Point(18, 35)
-            });
+            };
+            iconLabel.MouseEnter += OnEnter;
+            iconLabel.MouseLeave += OnLeave;
+            card.Controls.Add(iconLabel);
+
+            valueLabel.MouseEnter += OnEnter;
+            valueLabel.MouseLeave += OnLeave;
             card.Controls.Add(valueLabel);
-            card.Controls.Add(new Label
+
+            var titleLabel = new Label
             {
                 Text = title, Font = AppTheme.BodySmall,
                 ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent,
                 AutoSize = true, Location = new Point(70, 75)
-            });
+            };
+            titleLabel.MouseEnter += OnEnter;
+            titleLabel.MouseLeave += OnLeave;
+            card.Controls.Add(titleLabel);
 
             if (storageBytes >= 0)
                 AnimationHelper.AnimateStorageCounter(valueLabel, storageBytes, 800);
@@ -266,10 +288,10 @@ namespace SecureVault.UI.UserControls
                 ".docx" or ".doc" => "📘", ".xlsx" => "📗", _ => "📄"
             };
 
-            row.Controls.Add(new Label { Text = fileIcon, Font = new Font("Segoe UI Emoji", 14),
+            row.Controls.Add(new Label { Text = fileIcon, Font = EmojiSmallFont,
                 BackColor = Color.Transparent, AutoSize = true, Location = new Point(12, 8) });
             row.Controls.Add(new Label { Text = doc.FileName,
-                Font = new Font(AppTheme.FontFamily, 10), ForeColor = AppTheme.TextPrimary,
+                Font = FileNameFont, ForeColor = AppTheme.TextPrimary,
                 BackColor = Color.Transparent, AutoSize = true, Location = new Point(48, 5) });
             row.Controls.Add(new Label
             {

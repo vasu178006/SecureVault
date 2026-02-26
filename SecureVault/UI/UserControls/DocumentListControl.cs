@@ -64,7 +64,7 @@ namespace SecureVault.UI.UserControls
             {
                 PlaceholderText = "🔍 Search documents...",
                 Size = new Size(260, 40),
-                Margin = new Padding(0, 5, 10, 0)
+                Margin = new Padding(0, 7, 10, 0)
             };
             _searchBox.TextChanged += (s, e) => LoadDocuments();
             filterFlow.Controls.Add(_searchBox);
@@ -92,7 +92,7 @@ namespace SecureVault.UI.UserControls
                 IsGradient = false,
                 FlatColor = AppTheme.SurfaceMid,
                 CornerRadius = 8,
-                Margin = new Padding(10, 7, 0, 0)
+                Margin = new Padding(10, 9, 0, 0)
             };
             exportBtn.Click += ExportButton_Click;
             filterFlow.Controls.Add(exportBtn);
@@ -279,7 +279,7 @@ namespace SecureVault.UI.UserControls
             FlatStyle = FlatStyle.Flat,
             Font = AppTheme.BodyRegular,
             Size = new Size(width, 36),
-            Margin = new Padding(0, 8, 10, 0)
+            Margin = new Padding(0, 9, 10, 0)
         };
     }
 

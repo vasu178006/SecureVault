@@ -68,7 +68,7 @@ namespace SecureVault.UI.Forms
             // Glass card panel
             var card = new Panel
             {
-                Size = new Size(420, 500),
+                Size = new Size(440, 500),
                 BackColor = Color.Transparent,
                 Margin = new Padding(0)
             };
@@ -83,9 +83,9 @@ namespace SecureVault.UI.Forms
                 ColumnCount = 1,
                 RowCount = 9,
                 BackColor = Color.Transparent,
-                Padding = new Padding(35, 30, 35, 25)
+                Padding = new Padding(30, 25, 30, 20)
             };
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));  // Title
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));  // Title
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Subtitle
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Email label
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));  // Email box
