@@ -64,17 +64,17 @@ namespace SecureVault.UI.UserControls
             _searchBox.TextChanged += (s, e) => LoadDocuments();
             filterFlow.Controls.Add(_searchBox);
 
-            _categoryFilter = CreateComboBox(150);
+            _categoryFilter = CreateComboBox(180);
             filterFlow.Controls.Add(_categoryFilter);
             LoadCategories();
 
-            _typeFilter = CreateComboBox(110);
+            _typeFilter = CreateComboBox(130);
             _typeFilter.Items.AddRange(new object[] { "All Types", ".pdf", ".jpg", ".png", ".docx", ".xlsx", ".txt" });
             _typeFilter.SelectedIndex = 0;
             _typeFilter.SelectedIndexChanged += (s, e) => LoadDocuments();
             filterFlow.Controls.Add(_typeFilter);
 
-            _sortFilter = CreateComboBox(130);
+            _sortFilter = CreateComboBox(150);
             _sortFilter.Items.AddRange(new object[] { "Sort by Date", "Sort by Name", "Sort by Size", "Sort by Type" });
             _sortFilter.SelectedIndex = 0;
             _sortFilter.SelectedIndexChanged += (s, e) => LoadDocuments();
@@ -113,6 +113,9 @@ namespace SecureVault.UI.UserControls
             SetupGridColumns();
             SetupContextMenu();
             _grid.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) OpenSelectedFile(); };
+            _grid.CellContentClick += Grid_CellContentClick;
+            _grid.CellMouseEnter += Grid_CellMouseEnter;
+            _grid.CellMouseLeave += Grid_CellMouseLeave;
             root.Controls.Add(_grid, 0, 2);
 
             LoadDocuments();
@@ -124,6 +127,7 @@ namespace SecureVault.UI.UserControls
             _grid.Columns["Icon"].Width = 40;
             _grid.Columns["Icon"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             _grid.Columns.Add("FileName", "File Name");
+            _grid.Columns["FileName"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             _grid.Columns.Add("FileType", "Type");
             _grid.Columns["FileType"].Width = 70;
             _grid.Columns["FileType"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
@@ -142,6 +146,21 @@ namespace SecureVault.UI.UserControls
             _grid.Columns.Add("Important", "⭐");
             _grid.Columns["Important"].Width = 40;
             _grid.Columns["Important"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns["Important"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            
+            _grid.Columns.Add("ActionStar", "");
+            _grid.Columns["ActionStar"].Width = 40;
+            _grid.Columns["ActionStar"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns["ActionStar"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _grid.Columns["ActionStar"].DefaultCellStyle.SelectionBackColor = Color.Transparent;
+            _grid.Columns["ActionStar"].DefaultCellStyle.SelectionForeColor = AppTheme.TextPrimary;
+
+            _grid.Columns.Add("ActionDelete", "");
+            _grid.Columns["ActionDelete"].Width = 40;
+            _grid.Columns["ActionDelete"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns["ActionDelete"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _grid.Columns["ActionDelete"].DefaultCellStyle.SelectionBackColor = Color.Transparent;
+            _grid.Columns["ActionDelete"].DefaultCellStyle.SelectionForeColor = AppTheme.TextPrimary;
         }
 
         private void SetupContextMenu()
@@ -206,9 +225,46 @@ namespace SecureVault.UI.UserControls
                 _grid.Rows.Add(icon, doc.FileName, doc.FileType, doc.FileSizeDisplay,
                     doc.CategoryName ?? "—", doc.Tags ?? "—",
                     doc.UploadDate.ToString("MMM dd, yyyy HH:mm"),
-                    doc.IsImportant ? "⭐" : "");
+                    doc.IsImportant ? "⭐" : "",
+                    doc.IsImportant ? "★" : "☆", "🗑️");
             }
             _countLabel.Text = $"{_documents.Count} document(s)";
+        }
+
+        private void Grid_CellMouseEnter(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            string colName = _grid.Columns[e.ColumnIndex].Name;
+            if (colName == "ActionStar" || colName == "ActionDelete")
+            {
+                _grid.Cursor = Cursors.Hand;
+            }
+        }
+
+        private void Grid_CellMouseLeave(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            _grid.Cursor = Cursors.Default;
+        }
+
+        private void Grid_CellContentClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+
+            string colName = _grid.Columns[e.ColumnIndex].Name;
+            
+            // Set the selected row to the one clicked so GetSelectedDocument() works
+            _grid.ClearSelection();
+            _grid.Rows[e.RowIndex].Selected = true;
+
+            if (colName == "ActionStar")
+            {
+                ToggleImportant();
+            }
+            else if (colName == "ActionDelete")
+            {
+                DeleteSelectedDocument();
+            }
         }
 
         private Document? GetSelectedDocument()

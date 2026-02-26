@@ -72,6 +72,7 @@ namespace SecureVault.UI.UserControls
             _grid.Columns.Add("Action", "Action");
             _grid.Columns["Action"].Width = 150; _grid.Columns["Action"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             _grid.Columns.Add("Description", "Description");
+            _grid.Columns["Description"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             root.Controls.Add(_grid, 0, 2);
 
             LoadLogs();

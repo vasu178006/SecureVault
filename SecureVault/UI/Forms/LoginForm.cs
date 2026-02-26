@@ -19,8 +19,7 @@ namespace SecureVault.UI.Forms
         private RoundedButton _loginButton = null!;
         private Label _errorLabel = null!;
         private LinkLabel _registerLink = null!;
-        private float _bgAnimPhase;
-        private System.Windows.Forms.Timer? _bgTimer;
+
 
         public LoginForm()
         {
@@ -34,52 +33,15 @@ namespace SecureVault.UI.Forms
             DoubleBuffered = true;
             AutoScaleMode = AutoScaleMode.None;
 
-            Paint += PaintBackground;
+            Paint += (s, e) =>
+            {
+                using var brush = new LinearGradientBrush(ClientRectangle,
+                    AppTheme.PrimaryDark, AppTheme.PrimaryMid, 90f);
+                e.Graphics.FillRectangle(brush, ClientRectangle);
+            };
+
             BuildUI();
-            Load += (s, e) =>
-            {
-                AnimationHelper.FadeIn(this, 400);
-                StartBackgroundAnimation();
-            };
-        }
-
-        private void StartBackgroundAnimation()
-        {
-            _bgTimer = new System.Windows.Forms.Timer { Interval = 50 };
-            _bgTimer.Tick += (s, e) =>
-            {
-                _bgAnimPhase += 0.006f;
-                if (_bgAnimPhase > 2 * Math.PI) _bgAnimPhase -= (float)(2 * Math.PI);
-                Invalidate(false);
-            };
-            _bgTimer.Start();
-        }
-
-        private void PaintBackground(object? sender, PaintEventArgs e)
-        {
-            var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-
-            // Base gradient (same as RegisterForm)
-            using var baseBrush = new LinearGradientBrush(ClientRectangle,
-                AppTheme.PrimaryDark, AppTheme.PrimaryMid, 90f);
-            g.FillRectangle(baseBrush, ClientRectangle);
-
-            // Animated ambient orbs
-            float orb1X = (float)(Math.Sin(_bgAnimPhase) * 60 - 40);
-            float orb1Y = (float)(Math.Cos(_bgAnimPhase * 0.7) * 40 - 40);
-            using var c1 = new SolidBrush(Color.FromArgb(12, 167, 139, 250));
-            g.FillEllipse(c1, orb1X, orb1Y, 300, 300);
-
-            float orb2X = Width - 180 + (float)(Math.Cos(_bgAnimPhase * 0.5) * 35);
-            float orb2Y = Height - 180 + (float)(Math.Sin(_bgAnimPhase * 0.8) * 30);
-            using var c2 = new SolidBrush(Color.FromArgb(10, 59, 130, 246));
-            g.FillEllipse(c2, orb2X, orb2Y, 280, 280);
-
-            float orb3X = Width / 2 + (float)(Math.Sin(_bgAnimPhase * 1.2) * 60);
-            float orb3Y = Height / 3 + (float)(Math.Cos(_bgAnimPhase * 0.6) * 50);
-            using var c3 = new SolidBrush(Color.FromArgb(8, 244, 114, 182));
-            g.FillEllipse(c3, orb3X, orb3Y, 200, 200);
+            Load += (s, e) => AnimationHelper.FadeIn(this, 150);
         }
 
         private void BuildUI()
@@ -119,12 +81,12 @@ namespace SecureVault.UI.Forms
                 BackColor = Color.Transparent,
                 Padding = new Padding(30, 28, 30, 20)
             };
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));   // Shield icon
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));   // Title
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // Subtitle
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Email label
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Shield icon (was 48)
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));   // Title (was 40)
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));   // Subtitle (was 30 - adds big gap before email)
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // Email label (was 22)
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Email input
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Pass label
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));   // Pass label (match email)
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));   // Pass input
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // Error label
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // Login button
@@ -189,7 +151,9 @@ namespace SecureVault.UI.Forms
                 ForeColor = AppTheme.Error,
                 BackColor = Color.Transparent,
                 Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleCenter
+                TextAlign = ContentAlignment.TopCenter,
+                AutoSize = true,
+                MaximumSize = new Size(360, 0) // Force wrap within card width
             };
             inner.Controls.Add(_errorLabel, 0, row++);
 
@@ -266,8 +230,6 @@ namespace SecureVault.UI.Forms
                 var (success, message, user) = _authService.Login(_emailBox.Text.Trim(), _passwordBox.Text);
                 if (success && user != null)
                 {
-                    _bgTimer?.Stop();
-                    _bgTimer?.Dispose();
                     var mainForm = new MainForm();
                     mainForm.FormClosed += (s, args) => Close();
                     mainForm.Show();
@@ -290,14 +252,5 @@ namespace SecureVault.UI.Forms
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _bgTimer?.Stop();
-                _bgTimer?.Dispose();
-            }
-            base.Dispose(disposing);
-        }
     }
 }

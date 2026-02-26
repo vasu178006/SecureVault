@@ -89,7 +89,11 @@ namespace SecureVault.UI.Controls
             string text = SelectedItem?.ToString() ?? "";
             using var textBrush = new SolidBrush(AppTheme.TextPrimary);
             var textRect = new Rectangle(12, 0, Width - 36, Height);
-            var sf = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter };
+            var sf = new StringFormat { 
+                LineAlignment = StringAlignment.Center, 
+                Trimming = StringTrimming.EllipsisCharacter,
+                FormatFlags = StringFormatFlags.NoWrap
+            };
             g.DrawString(text, Font, textBrush, textRect, sf);
 
             // Dropdown chevron
@@ -116,7 +120,11 @@ namespace SecureVault.UI.Controls
             var textColor = isSelected ? AppTheme.TextPrimary : AppTheme.TextSecondary;
             using var textBrush = new SolidBrush(textColor);
             var textRect = new Rectangle(e.Bounds.X + 10, e.Bounds.Y, e.Bounds.Width - 20, e.Bounds.Height);
-            var sf = new StringFormat { LineAlignment = StringAlignment.Center };
+            var sf = new StringFormat { 
+                LineAlignment = StringAlignment.Center,
+                Trimming = StringTrimming.EllipsisCharacter,
+                FormatFlags = StringFormatFlags.NoWrap
+            };
             g.DrawString(text, Font, textBrush, textRect, sf);
         }
 

@@ -221,6 +221,7 @@ namespace SecureVault.BLL
         public List<Document> GetDeleted(int userId) => _docRepo.GetDeleted(userId);
         public List<Document> GetRecentlyViewed(int userId, int count = 5) => _docRepo.GetRecentlyViewed(userId, count);
         public int GetDocumentCount(int userId) => _docRepo.GetDocumentCount(userId);
+        public int GetThisMonthCount(int userId) => _docRepo.GetThisMonthCount(userId);
         public int GetTotalDocumentCount() => _docRepo.GetTotalDocumentCount();
         public long GetStorageUsed(int userId) => _docRepo.GetStorageUsed(userId);
         public long GetTotalStorageUsed() => _docRepo.GetTotalStorageUsed();

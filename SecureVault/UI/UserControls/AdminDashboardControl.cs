@@ -127,20 +127,44 @@ namespace SecureVault.UI.UserControls
         private Panel CreateStatCard(string icon, string title, int value,
             Color gradStart, Color gradEnd, long storageBytes = -1, string? label = null)
         {
-            bool isHovered = false;
+            float hoverProgress = 0f;
+            System.Windows.Forms.Timer? hoverTimer = null;
             var card = new Panel
             {
                 Size = new Size(260, 130), Margin = new Padding(0, 0, 16, 12),
                 BackColor = Color.Transparent, Cursor = Cursors.Hand
             };
+            AppTheme.EnableDoubleBuffering(card);
 
             card.Paint += (s, e) =>
                 AppTheme.PaintStatCard(e.Graphics,
                     new Rectangle(0, 0, card.Width - 1, card.Height - 1),
-                    AppTheme.RadiusCard, gradStart, gradEnd, isHovered);
+                    AppTheme.RadiusCard, gradStart, gradEnd, hoverProgress);
 
-            void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
-            void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
+            void StartHover(float target)
+            {
+                hoverTimer?.Stop(); hoverTimer?.Dispose();
+                hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
+                float step = target > hoverProgress ? 0.08f : -0.08f;
+                hoverTimer.Tick += (sender, args) =>
+                {
+                    hoverProgress += step;
+                    if ((step > 0 && hoverProgress >= target) || (step < 0 && hoverProgress <= target))
+                    {
+                        hoverProgress = target;
+                        hoverTimer.Stop(); hoverTimer.Dispose(); hoverTimer = null;
+                    }
+                    card.Invalidate();
+                };
+                hoverTimer.Start();
+            }
+
+            void OnEnter(object? s, EventArgs e) => StartHover(1f);
+            void OnLeave(object? s, EventArgs e)
+            {
+                if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
+                    StartHover(0f);
+            }
             card.MouseEnter += OnEnter;
             card.MouseLeave += OnLeave;
 
@@ -150,6 +174,8 @@ namespace SecureVault.UI.UserControls
                 BackColor = Color.Transparent,
                 Padding = new Padding(18, 18, 18, 12), Margin = new Padding(0)
             };
+            AppTheme.EnableDoubleBuffering(inner);
+
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             inner.RowStyles.Add(new RowStyle(SizeType.Percent, 60));

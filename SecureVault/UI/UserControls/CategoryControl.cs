@@ -74,11 +74,12 @@ namespace SecureVault.UI.UserControls
                 EmptyMessage = "No categories created yet"
             };
             _grid.Columns.Add("Name", "Category Name");
+            _grid.Columns["Name"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             _grid.Columns.Add("Type", "Type");
             _grid.Columns["Type"].Width = 100;
             _grid.Columns["Type"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             _grid.Columns.Add("DocCount", "Documents");
-            _grid.Columns["DocCount"].Width = 100;
+            _grid.Columns["DocCount"].Width = 120;
             _grid.Columns["DocCount"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
 
             var ctx = new ContextMenuStrip { BackColor = AppTheme.SurfaceDark, ForeColor = AppTheme.TextPrimary };

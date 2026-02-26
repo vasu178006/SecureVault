@@ -81,6 +81,7 @@ namespace SecureVault.UI.UserControls
                 EmptyMessage = "Recycle bin is empty"
             };
             _grid.Columns.Add("FileName", "File Name");
+            _grid.Columns["FileName"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             _grid.Columns.Add("FileType", "Type");
             _grid.Columns["FileType"].Width = 80; _grid.Columns["FileType"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             _grid.Columns.Add("FileSize", "Size");

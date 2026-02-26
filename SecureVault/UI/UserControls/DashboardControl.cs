@@ -62,12 +62,13 @@ namespace SecureVault.UI.UserControls
             root.Controls.Add(welcomeLabel, 0, row++);
 
             // ── Stats Cards ──
-            int docCount = 0, importantCount = 0;
+            int docCount = 0, importantCount = 0, thisMonthCount = 0;
             long storageUsed = 0;
             try
             {
                 docCount = _docService.GetDocumentCount(userId);
                 importantCount = _docService.GetImportant(userId).Count;
+                thisMonthCount = _docService.GetThisMonthCount(userId);
                 storageUsed = _docService.GetStorageUsed(userId);
             }
             catch { }
@@ -84,7 +85,7 @@ namespace SecureVault.UI.UserControls
                 AppTheme.AccentTeal, AppTheme.AccentCyan, storageUsed));
             cardsFlow.Controls.Add(CreateStatCard("⭐", "Important", importantCount,
                 AppTheme.AccentPink, Color.FromArgb(168, 85, 247)));
-            cardsFlow.Controls.Add(CreateStatCard("📅", "This Month", 0,
+            cardsFlow.Controls.Add(CreateStatCard("📅", "This Month", thisMonthCount,
                 Color.FromArgb(245, 158, 11), Color.FromArgb(234, 88, 12)));
             root.Controls.Add(cardsFlow, 0, row++);
 
@@ -148,7 +149,8 @@ namespace SecureVault.UI.UserControls
         private Panel CreateStatCard(string icon, string title, int value,
             Color gradStart, Color gradEnd, long storageBytes = -1)
         {
-            bool isHovered = false;
+            float hoverProgress = 0f;
+            System.Windows.Forms.Timer? hoverTimer = null;
             var card = new Panel
             {
                 Size = new Size(260, 130),
@@ -156,14 +158,37 @@ namespace SecureVault.UI.UserControls
                 BackColor = Color.Transparent,
                 Cursor = Cursors.Hand
             };
+            AppTheme.EnableDoubleBuffering(card);
 
             card.Paint += (s, e) =>
                 AppTheme.PaintStatCard(e.Graphics,
                     new Rectangle(0, 0, card.Width - 1, card.Height - 1),
-                    AppTheme.RadiusCard, gradStart, gradEnd, isHovered);
+                    AppTheme.RadiusCard, gradStart, gradEnd, hoverProgress);
 
-            void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
-            void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
+            void StartHover(float target)
+            {
+                hoverTimer?.Stop(); hoverTimer?.Dispose();
+                hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
+                float step = target > hoverProgress ? 0.08f : -0.08f;
+                hoverTimer.Tick += (sender, args) =>
+                {
+                    hoverProgress += step;
+                    if ((step > 0 && hoverProgress >= target) || (step < 0 && hoverProgress <= target))
+                    {
+                        hoverProgress = target;
+                        hoverTimer.Stop(); hoverTimer.Dispose(); hoverTimer = null;
+                    }
+                    card.Invalidate();
+                };
+                hoverTimer.Start();
+            }
+
+            void OnEnter(object? s, EventArgs e) => StartHover(1f);
+            void OnLeave(object? s, EventArgs e)
+            {
+                if (!card.ClientRectangle.Contains(card.PointToClient(Cursor.Position)))
+                    StartHover(0f);
+            }
             card.MouseEnter += OnEnter;
             card.MouseLeave += OnLeave;
 
@@ -173,6 +198,8 @@ namespace SecureVault.UI.UserControls
                 BackColor = Color.Transparent,
                 Padding = new Padding(18, 18, 18, 12), Margin = new Padding(0)
             };
+            AppTheme.EnableDoubleBuffering(inner);
+
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             inner.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
@@ -229,7 +256,8 @@ namespace SecureVault.UI.UserControls
         private Panel CreateDocRow(Models.Document doc, int width)
         {
             if (width < 200) width = 600;
-            bool isHovered = false;
+            float hoverProgress = 0f;
+            System.Windows.Forms.Timer? hoverTimer = null;
             var row = new Panel
             {
                 Size = new Size(width, 52),
@@ -237,21 +265,51 @@ namespace SecureVault.UI.UserControls
                 Margin = new Padding(0, 0, 0, 4),
                 Cursor = Cursors.Hand
             };
+            AppTheme.EnableDoubleBuffering(row);
+
             row.Paint += (s, e) =>
             {
                 var g = e.Graphics;
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 var rect = new Rectangle(0, 0, row.Width - 1, row.Height - 1);
                 using var path = AppTheme.CreateRoundedRect(rect, 8);
-                var bgColor = isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark;
+                
+                Color bgColor = AppTheme.LerpColor(AppTheme.SurfaceDark, AppTheme.SurfaceMid, hoverProgress);
                 using var brush = new SolidBrush(bgColor);
                 g.FillPath(brush, path);
-                if (isHovered)
+                
+                if (hoverProgress > 0.01f)
                 {
-                    using var borderPen = new Pen(Color.FromArgb(25, 255, 255, 255), 1f);
-                    g.DrawPath(borderPen, path);
+                    AppTheme.PaintGlowBorder(g, rect, 8, AppTheme.AccentGlow, hoverProgress * 0.2f);
                 }
             };
+
+            void StartHover(float target)
+            {
+                hoverTimer?.Stop(); hoverTimer?.Dispose();
+                hoverTimer = new System.Windows.Forms.Timer { Interval = 16 };
+                float step = target > hoverProgress ? 0.08f : -0.08f;
+                hoverTimer.Tick += (sender, args) =>
+                {
+                    hoverProgress += step;
+                    if ((step > 0 && hoverProgress >= target) || (step < 0 && hoverProgress <= target))
+                    {
+                        hoverProgress = target;
+                        hoverTimer.Stop(); hoverTimer.Dispose(); hoverTimer = null;
+                    }
+                    row.Invalidate();
+                };
+                hoverTimer.Start();
+            }
+
+            void OnEnter(object? s, EventArgs e) => StartHover(1f);
+            void OnLeave(object? s, EventArgs e)
+            {
+                if (!row.ClientRectangle.Contains(row.PointToClient(Cursor.Position)))
+                    StartHover(0f);
+            }
+            row.MouseEnter += OnEnter;
+            row.MouseLeave += OnLeave;
 
             string fileIcon = doc.FileType?.ToLower() switch
             {
@@ -273,14 +331,10 @@ namespace SecureVault.UI.UserControls
                 BackColor = Color.Transparent, AutoSize = true, Location = new Point(54, 28)
             });
 
-            void Enter(object? s, EventArgs e) { isHovered = true; row.Invalidate(); }
-            void Leave(object? s, EventArgs e) { isHovered = false; row.Invalidate(); }
-            row.MouseEnter += Enter;
-            row.MouseLeave += Leave;
             foreach (Control c in row.Controls)
             {
-                c.MouseEnter += Enter;
-                c.MouseLeave += Leave;
+                c.MouseEnter += OnEnter;
+                c.MouseLeave += OnLeave;
             }
             return row;
         }

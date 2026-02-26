@@ -36,8 +36,8 @@ namespace SecureVault.UI.Controls
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             StartPosition = FormStartPosition.CenterParent;
-            BackColor = Color.FromArgb(1, 1, 1); // Near-black for TransparencyKey alternative
-            Size = new Size(420, 220);
+            BackColor = AppTheme.PrimaryDark; // Solid Fallback if shadow masking fails
+            Size = new Size(420, 220); // Just the size of the pop-up
             DoubleBuffered = true;
             KeyPreview = true;
             KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) { DialogResult = DialogResult.Cancel; Close(); } };
@@ -52,7 +52,7 @@ namespace SecureVault.UI.Controls
 
         private void BuildUI()
         {
-            // Dialog card (centered)
+            // Dialog card
             var card = new Panel
             {
                 Size = new Size(400, 200),
@@ -141,9 +141,9 @@ namespace SecureVault.UI.Controls
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            // Backdrop (semi-transparent overlay)
-            using var bgBrush = new SolidBrush(Color.FromArgb(160, 0, 0, 0));
-            e.Graphics.FillRectangle(bgBrush, ClientRectangle);
+            base.OnPaint(e);
+            // Draw a subtle border around the form itself to tie into the card
+            e.Graphics.Clear(AppTheme.SurfaceDark);
         }
 
         protected override CreateParams CreateParams
@@ -151,7 +151,7 @@ namespace SecureVault.UI.Controls
             get
             {
                 var cp = base.CreateParams;
-                cp.ExStyle |= 0x00000020; // WS_EX_TRANSPARENT (for backdrop effect)
+                // Removed WS_EX_TRANSPARENT as it breaks WinForms hit testing and child control painting
                 return cp;
             }
         }
@@ -159,6 +159,26 @@ namespace SecureVault.UI.Controls
         // ═══════════════════════════════════════════
         //  Static Factory Methods
         // ═══════════════════════════════════════════
+
+        private static Form? ShowBackdrop(IWin32Window? owner)
+        {
+            if (owner is Form parentForm)
+            {
+                var shadow = new Form
+                {
+                    StartPosition = FormStartPosition.Manual,
+                    FormBorderStyle = FormBorderStyle.None,
+                    Opacity = 0.50,
+                    BackColor = Color.Black,
+                    ShowInTaskbar = false,
+                    Location = parentForm.PointToScreen(Point.Empty),
+                    Size = parentForm.ClientSize
+                };
+                shadow.Show(parentForm);
+                return shadow;
+            }
+            return null;
+        }
 
         /// <summary>
         /// Shows a confirmation dialog with Yes/Cancel buttons.
@@ -168,17 +188,11 @@ namespace SecureVault.UI.Controls
             string confirmText = "Confirm", string cancelText = "Cancel",
             IWin32Window? owner = null)
         {
+            using var shadow = ShowBackdrop(owner);
             using var dlg = new ModernDialog(title, message, confirmText, cancelText, null);
-            if (owner != null)
-            {
-                // Size to cover parent
-                if (owner is Form parentForm)
-                {
-                    dlg.Size = parentForm.Size;
-                    dlg.StartPosition = FormStartPosition.CenterParent;
-                }
-            }
-            return dlg.ShowDialog(owner) == DialogResult.Yes;
+            bool result = dlg.ShowDialog(shadow ?? owner) == DialogResult.Yes;
+            shadow?.Close();
+            return result;
         }
 
         /// <summary>
@@ -187,13 +201,11 @@ namespace SecureVault.UI.Controls
         public static bool ConfirmDelete(string title, string message,
             string confirmText = "Delete", IWin32Window? owner = null)
         {
+            using var shadow = ShowBackdrop(owner);
             using var dlg = new ModernDialog(title, message, confirmText, "Cancel", AppTheme.Error);
-            if (owner is Form parentForm)
-            {
-                dlg.Size = parentForm.Size;
-                dlg.StartPosition = FormStartPosition.CenterParent;
-            }
-            return dlg.ShowDialog(owner) == DialogResult.Yes;
+            bool result = dlg.ShowDialog(shadow ?? owner) == DialogResult.Yes;
+            shadow?.Close();
+            return result;
         }
 
         /// <summary>
@@ -201,13 +213,10 @@ namespace SecureVault.UI.Controls
         /// </summary>
         public static void ShowInfo(string title, string message, IWin32Window? owner = null)
         {
+            using var shadow = ShowBackdrop(owner);
             using var dlg = new ModernDialog(title, message, "OK", null, AppTheme.Info);
-            if (owner is Form parentForm)
-            {
-                dlg.Size = parentForm.Size;
-                dlg.StartPosition = FormStartPosition.CenterParent;
-            }
-            dlg.ShowDialog(owner);
+            dlg.ShowDialog(shadow ?? owner);
+            shadow?.Close();
         }
     }
 }

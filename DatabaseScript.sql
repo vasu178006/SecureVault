@@ -172,9 +172,8 @@ BEGIN
     VALUES (
         'System Admin',
         'admin@securevault.com',
-        -- SHA256 hash of 'Admin@123' will be computed by the app on first setup
-        -- Using a placeholder that the app's PasswordHelper will generate
-        '57D9158E0D42FECBE606630FA94D54E36B8E426CFB9F81CE3E8C6F1C48C0E65E',
+        -- Valid SHA256 hash of 'Admin@123' matching PasswordHelper.HashPassword
+        'E86F78A8A3CAF0B60D8E74E5942AA6D86DC1550CD3C03338AEF25B7D2D7E3ACC7',
         'Admin',
         0,
         0,

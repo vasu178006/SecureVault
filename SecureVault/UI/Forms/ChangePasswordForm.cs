@@ -7,6 +7,7 @@ using SecureVault.BLL;
 using SecureVault.Helpers;
 using SecureVault.UI.Controls;
 using SecureVault.UI.Theme;
+using System.Drawing.Drawing2D;
 
 namespace SecureVault.UI.Forms
 {
@@ -31,8 +32,15 @@ namespace SecureVault.UI.Forms
             DoubleBuffered = true;
             AutoScaleMode = AutoScaleMode.None;
 
+            Paint += (s, e) =>
+            {
+                using var brush = new LinearGradientBrush(ClientRectangle,
+                    AppTheme.PrimaryDark, AppTheme.PrimaryMid, 90f);
+                e.Graphics.FillRectangle(brush, ClientRectangle);
+            };
+
             BuildUI();
-            Load += (s, e) => AnimationHelper.FadeIn(this, 300);
+            Load += (s, e) => AnimationHelper.FadeIn(this, 150);
 
             KeyPreview = true;
             KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) ChangeButton_Click(this, EventArgs.Empty); };

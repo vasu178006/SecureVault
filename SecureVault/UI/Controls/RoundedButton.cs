@@ -160,8 +160,12 @@ namespace SecureVault.UI.Controls
             }
             else
             {
+                int r = Math.Min(255, FlatColor.R + 30);
+                int gC = Math.Min(255, FlatColor.G + 30); // Use gC to avoid hiding Graphics g
+                int b = Math.Min(255, FlatColor.B + 30);
+                
                 Color fill = AppTheme.LerpColor(FlatColor,
-                    AppTheme.LerpColor(FlatColor, Color.FromArgb(FlatColor.R + 30, FlatColor.G + 30, FlatColor.B + 30), 1f),
+                    AppTheme.LerpColor(FlatColor, Color.FromArgb(r, gC, b), 1f),
                     _hoverProgress);
                 using var brush = new SolidBrush(fill);
                 g.FillPath(brush, path);

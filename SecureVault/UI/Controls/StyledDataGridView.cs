@@ -21,7 +21,7 @@ namespace SecureVault.UI.Controls
             // General
             BackgroundColor = AppTheme.PrimaryDark;
             BorderStyle = BorderStyle.None;
-            GridColor = Color.FromArgb(30, 255, 255, 255);
+            GridColor = Color.FromArgb(38, 38, 58);  // Must be opaque; approximates 30/255 white on dark bg
             CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             RowHeadersVisible = false;
             AllowUserToAddRows = false;
@@ -30,7 +30,7 @@ namespace SecureVault.UI.Controls
             ReadOnly = true;
             SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             MultiSelect = false;
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            // Removed AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill; so individual columns can dictate their fill/none behavior
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             ColumnHeadersHeight = 48;
             RowTemplate.Height = 48;

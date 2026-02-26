@@ -42,7 +42,7 @@ namespace SecureVault.UI.Forms
             };
 
             BuildUI();
-            Load += (s, e) => AnimationHelper.FadeIn(this, 400);
+            Load += (s, e) => AnimationHelper.FadeIn(this, 150);
         }
 
         private void BuildUI()
@@ -111,11 +111,12 @@ namespace SecureVault.UI.Forms
             _passwordBox.TextChanged += (s, e) => UpdatePasswordStrength();
             inner.Controls.Add(_passwordBox, 0, row++);
 
-            // Password strength row
+            // Password strength row (hidden until user types)
             var strengthRow = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
-                BackColor = Color.Transparent, Margin = new Padding(0)
+                BackColor = Color.Transparent, Margin = new Padding(0),
+                Visible = false
             };
             strengthRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
             strengthRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35));
@@ -149,7 +150,8 @@ namespace SecureVault.UI.Forms
             _registerButton = new RoundedButton
             {
                 Text = "Create Account", Dock = DockStyle.Fill,
-                ButtonColorStart = AppTheme.AccentTeal, ButtonColorEnd = AppTheme.AccentCyan,
+                ButtonColorStart = AppTheme.AccentTeal,
+                ButtonColorEnd = AppTheme.AccentCyan,
                 HoverColorStart = Color.FromArgb(40, 204, 186),
                 HoverColorEnd = Color.FromArgb(26, 202, 232),
                 Margin = new Padding(0, 4, 0, 4)
@@ -191,6 +193,9 @@ namespace SecureVault.UI.Forms
                 _strengthBar.BarColorEnd = AppTheme.AccentTeal;
                 _strengthLabel.Text = "Strong"; _strengthLabel.ForeColor = AppTheme.Success;
             }
+            // Show/hide the strength row based on whether there's any password text
+            if (_strengthBar.Parent?.Parent is Control strengthRow2)
+                strengthRow2.Visible = !string.IsNullOrEmpty(pwd);
             if (string.IsNullOrEmpty(pwd)) { _strengthLabel.Text = ""; _strengthBar.Value = 0; }
         }
 

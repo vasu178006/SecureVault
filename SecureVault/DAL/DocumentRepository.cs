@@ -328,6 +328,19 @@ namespace SecureVault.DAL
         }
 
         /// <summary>
+        /// Gets the count of documents uploaded this month for a user.
+        /// </summary>
+        public int GetThisMonthCount(int userId)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM Documents WHERE UserID = @UserID AND IsDeleted = 0 " +
+                "AND MONTH(UploadDate) = MONTH(GETDATE()) AND YEAR(UploadDate) = YEAR(GETDATE())", conn);
+            cmd.Parameters.AddWithValue("@UserID", userId);
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
+        /// <summary>
         /// Gets total document count across all users.
         /// </summary>
         public int GetTotalDocumentCount()

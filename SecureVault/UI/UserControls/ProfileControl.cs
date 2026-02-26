@@ -67,7 +67,7 @@ namespace SecureVault.UI.UserControls
                 Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 10,
                 BackColor = Color.Transparent, Padding = new Padding(28, 24, 28, 20)
             };
-            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 110));
+            inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 130));
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));
             inner.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
@@ -212,11 +212,7 @@ namespace SecureVault.UI.UserControls
                 using var borderPen = new Pen(Color.FromArgb(80, AppTheme.AccentGlow.R, AppTheme.AccentGlow.G, AppTheme.AccentGlow.B), 2f);
                 g.DrawEllipse(borderPen, 1, 1, w - 3, h - 3);
 
-                var bgColor = AppTheme.GetEffectiveBackColor(pb.Parent);
-                using var bgBrush = new SolidBrush(bgColor);
-                using var outerRegion = new Region(new Rectangle(0, 0, w, h));
-                outerRegion.Exclude(circlePath);
-                g.FillRegion(bgBrush, outerRegion);
+                // Removing the SolidBrush FillRegion logic that painted dark corners
             };
         }
 

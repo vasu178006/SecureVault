@@ -230,21 +230,22 @@ namespace SecureVault.UI.Theme
         /// Paints a stat card with shadow, fill, border, and gradient accent stripe.
         /// </summary>
         public static void PaintStatCard(Graphics g, Rectangle rect, int radius,
-            Color gradStart, Color gradEnd, bool isHovered, int shadowDepth = 6)
+            Color gradStart, Color gradEnd, float hoverProgress, int shadowDepth = 6)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            DrawShadow(g, rect, radius, isHovered ? shadowDepth + 2 : shadowDepth);
+            int currentShadow = shadowDepth + (int)(2 * hoverProgress);
+            DrawShadow(g, rect, radius, currentShadow);
 
             using var path = CreateRoundedRect(rect, radius);
-            using var bg = new SolidBrush(isHovered ? SurfaceMid : SurfaceDark);
+            Color bgFill = LerpColor(SurfaceDark, SurfaceMid, hoverProgress);
+            using var bg = new SolidBrush(bgFill);
             g.FillPath(bg, path);
 
-            if (isHovered)
-                PaintGlowBorder(g, rect, radius, AccentGlow, 0.4f);
+            if (hoverProgress > 0.01f)
+                PaintGlowBorder(g, rect, radius, AccentGlow, hoverProgress * 0.4f);
 
-            using var border = new Pen(
-                isHovered ? Color.FromArgb(60, AccentGlow.R, AccentGlow.G, AccentGlow.B)
-                          : Color.FromArgb(30, 255, 255, 255), 1f);
+            int borderAlpha = 30 + (int)(30 * hoverProgress);
+            using var border = new Pen(Color.FromArgb(borderAlpha, AccentGlow.R, AccentGlow.G, AccentGlow.B), 1f);
             g.DrawPath(border, path);
 
             // Gradient accent stripe at top
@@ -255,6 +256,16 @@ namespace SecureVault.UI.Theme
             using var accentBrush = new LinearGradientBrush(accentRect, gradStart, gradEnd, 0f);
             g.FillRectangle(accentBrush, accentRect);
             g.Clip = prevClip;
+        }
+
+        /// <summary>
+        /// Uses reflection to enable DoubleBuffered property on a Control to eliminate flickering.
+        /// </summary>
+        public static void EnableDoubleBuffering(Control control)
+        {
+            var prop = typeof(Control).GetProperty("DoubleBuffered", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            prop?.SetValue(control, true, null);
         }
     }
 }
