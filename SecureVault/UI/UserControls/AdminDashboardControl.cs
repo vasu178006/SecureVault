@@ -1,5 +1,7 @@
 // ============================================
-// SecureVault - Admin Dashboard (Layout Refactored)
+// SecureVault - Admin Dashboard (Redesigned)
+// PaintStatCard, refined bar chart,
+// consistent spacing
 // ============================================
 
 using SecureVault.BLL;
@@ -34,13 +36,10 @@ namespace SecureVault.UI.UserControls
             {
                 AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 Dock = DockStyle.Top, ColumnCount = 1, RowCount = 4,
-                BackColor = Color.Transparent, Padding = new Padding(20, 15, 20, 15)
+                BackColor = Color.Transparent, Padding = new Padding(24, 20, 24, 20)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            for (int i = 0; i < 4; i++) root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             scroll.Controls.Add(root);
 
             int totalUsers = 0, totalDocs = 0; long totalStorage = 0; Models.User? mostActive = null;
@@ -50,14 +49,14 @@ namespace SecureVault.UI.UserControls
             {
                 Text = "⚡ Admin Dashboard", Font = AppTheme.HeadingMedium,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
-                AutoSize = true, Margin = new Padding(0, 0, 0, 15)
+                AutoSize = true, Margin = new Padding(0, 0, 0, 16)
             }, 0, 0);
 
             var cardsFlow = new FlowLayoutPanel
             {
                 AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 FlowDirection = FlowDirection.LeftToRight, WrapContents = true,
-                BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, 20)
+                BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, 24)
             };
             cardsFlow.Controls.Add(CreateStatCard("👥", "Total Users", totalUsers, AppTheme.GradientStart, AppTheme.GradientEnd));
             cardsFlow.Controls.Add(CreateStatCard("📂", "Total Documents", totalDocs, AppTheme.AccentTeal, AppTheme.AccentCyan));
@@ -69,7 +68,7 @@ namespace SecureVault.UI.UserControls
             {
                 Text = "📊 Document Distribution", Font = AppTheme.HeadingSmall,
                 ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
-                AutoSize = true, Margin = new Padding(0, 5, 0, 10)
+                AutoSize = true, Margin = new Padding(0, 5, 0, 12)
             }, 0, 2);
 
             try
@@ -77,11 +76,7 @@ namespace SecureVault.UI.UserControls
                 var dist = _docService.GetCategoryDistribution();
                 if (dist.Count > 0)
                 {
-                    var chart = new Panel
-                    {
-                        Size = new Size(700, 200), BackColor = Color.Transparent,
-                        Margin = new Padding(0)
-                    };
+                    var chart = new Panel { Size = new Size(700, 220), BackColor = Color.Transparent };
                     chart.Paint += (s, e) => PaintBarChart(e.Graphics, chart.ClientRectangle, dist);
                     root.Controls.Add(chart, 0, 3);
                 }
@@ -96,61 +91,64 @@ namespace SecureVault.UI.UserControls
         private void PaintBarChart(Graphics g, Rectangle bounds, Dictionary<string, int> data)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
             if (data.Count == 0) return;
             int maxVal = data.Values.Max(); if (maxVal == 0) maxVal = 1;
-            int barWidth = Math.Min(80, (bounds.Width - 40) / data.Count - 10);
-            int x = 30, chartBottom = bounds.Height - 30, chartHeight = chartBottom - 20;
+            int barWidth = Math.Min(80, (bounds.Width - 40) / data.Count - 12);
+            int x = 30, chartBottom = bounds.Height - 35, chartHeight = chartBottom - 20;
             Color[] colors = { AppTheme.GradientStart, AppTheme.AccentTeal, AppTheme.AccentCyan, AppTheme.AccentPink, AppTheme.AccentGlow, AppTheme.Warning };
 
             int i = 0;
             foreach (var kvp in data)
             {
                 int barH = (int)((double)kvp.Value / maxVal * chartHeight);
+                if (barH < 4) barH = 4;
                 var barRect = new Rectangle(x, chartBottom - barH, barWidth, barH);
-                using var path = AppTheme.CreateRoundedRect(barRect, 4);
-                using var brush = new SolidBrush(colors[i % colors.Length]);
+                var c = colors[i % colors.Length];
+
+                // Gradient bar
+                using var path = AppTheme.CreateRoundedRect(barRect, 6);
+                using var brush = new LinearGradientBrush(barRect,
+                    Color.FromArgb(220, c.R, c.G, c.B),
+                    Color.FromArgb(160, c.R, c.G, c.B), 90f);
                 g.FillPath(brush, path);
-                TextRenderer.DrawText(g, kvp.Value.ToString(), AppTheme.BodySmall, new Point(x + barWidth / 2 - 10, chartBottom - barH - 18), AppTheme.TextPrimary);
-                TextRenderer.DrawText(g, kvp.Key.Length > 12 ? kvp.Key[..12] + "…" : kvp.Key, AppTheme.BodySmall, new Point(x, chartBottom + 5), AppTheme.TextSecondary);
-                x += barWidth + 15; i++;
+
+                // Value label
+                TextRenderer.DrawText(g, kvp.Value.ToString(), AppTheme.BodySmall,
+                    new Point(x + barWidth / 2 - 10, chartBottom - barH - 20), AppTheme.TextPrimary);
+                // Category label
+                string label = kvp.Key.Length > 12 ? kvp.Key[..12] + "…" : kvp.Key;
+                TextRenderer.DrawText(g, label, AppTheme.BodySmall,
+                    new Point(x, chartBottom + 8), AppTheme.TextSecondary);
+                x += barWidth + 16; i++;
             }
         }
 
-        private Panel CreateStatCard(string icon, string title, int value, Color gradStart, Color gradEnd, long storageBytes = -1, string? label = null)
+        private Panel CreateStatCard(string icon, string title, int value,
+            Color gradStart, Color gradEnd, long storageBytes = -1, string? label = null)
         {
             bool isHovered = false;
-            var card = new Panel { Size = new Size(260, 140), Margin = new Padding(0, 0, 15, 10), BackColor = Color.Transparent, Cursor = Cursors.Hand };
+            var card = new Panel
+            {
+                Size = new Size(260, 130), Margin = new Padding(0, 0, 16, 12),
+                BackColor = Color.Transparent, Cursor = Cursors.Hand
+            };
 
             card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
-                AppTheme.DrawShadow(e.Graphics, rect, AppTheme.RadiusMedium, isHovered ? 7 : 5);
-                using var path = AppTheme.CreateRoundedRect(rect, AppTheme.RadiusMedium);
-                using var bg = new SolidBrush(isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark);
-                e.Graphics.FillPath(bg, path);
-                using var border = new Pen(isHovered ? Color.FromArgb(80, AppTheme.AccentGlow.R, AppTheme.AccentGlow.G, AppTheme.AccentGlow.B) : AppTheme.SurfaceBorder, isHovered ? 1.2f : 1f);
-                e.Graphics.DrawPath(border, path);
-                var accent = new Rectangle(0, 0, card.Width - 1, 4);
-                using var ap = AppTheme.CreateRoundedRect(accent, 2);
-                using var ab = new LinearGradientBrush(accent, gradStart, gradEnd, 0f);
-                e.Graphics.FillPath(ab, ap);
-            };
+                AppTheme.PaintStatCard(e.Graphics,
+                    new Rectangle(0, 0, card.Width - 1, card.Height - 1),
+                    AppTheme.RadiusCard, gradStart, gradEnd, isHovered);
 
             void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
             void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
             card.MouseEnter += OnEnter;
             card.MouseLeave += OnLeave;
 
-            // Inner layout using TableLayoutPanel — no hardcoded positions
             var inner = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 2,
+                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2,
                 BackColor = Color.Transparent,
-                Padding = new Padding(16, 14, 16, 10),
-                Margin = new Padding(0)
+                Padding = new Padding(18, 18, 18, 12), Margin = new Padding(0)
             };
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -173,10 +171,8 @@ namespace SecureVault.UI.UserControls
 
             var valueLabel = new Label
             {
-                Font = AppTheme.HeadingLarge,
-                ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent,
-                AutoSize = false, Dock = DockStyle.Fill,
+                Font = AppTheme.HeadingLarge, ForeColor = AppTheme.TextPrimary,
+                BackColor = Color.Transparent, AutoSize = false, Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.BottomLeft,
                 UseCompatibleTextRendering = false, Margin = new Padding(0)
             };

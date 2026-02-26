@@ -1,6 +1,7 @@
 // ============================================
-// SecureVault - Document List (Layout Refactored)
-// TableLayoutPanel filter bar + dock-fill grid
+// SecureVault - Document List (Redesigned)
+// Refined filter bar, toast notifications,
+// empty state in grid, ModernDialog delete
 // ============================================
 
 using SecureVault.BLL;
@@ -35,36 +36,30 @@ namespace SecureVault.UI.UserControls
         {
             Controls.Clear();
 
-            // Root layout
             var root = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 3,
-                BackColor = Color.Transparent,
-                Padding = new Padding(15, 10, 15, 10)
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                BackColor = Color.Transparent, Padding = new Padding(20, 14, 20, 14)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));   // Filter bar
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));   // Count label
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // Grid
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             Controls.Add(root);
 
-            // ── Filter Bar (FlowLayout) ──
+            // ── Filter Bar ──
             var filterFlow = new FlowLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = false,
-                BackColor = Color.Transparent
+                Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false, BackColor = Color.Transparent
             };
             root.Controls.Add(filterFlow, 0, 0);
 
             _searchBox = new RoundedTextBox
             {
                 PlaceholderText = "🔍 Search documents...",
-                Size = new Size(260, 36),
-                Margin = new Padding(0, 8, 8, 0)
+                Size = new Size(260, 38),
+                Margin = new Padding(0, 8, 10, 0)
             };
             _searchBox.TextChanged += (s, e) => LoadDocuments();
             filterFlow.Controls.Add(_searchBox);
@@ -88,11 +83,11 @@ namespace SecureVault.UI.UserControls
             var exportBtn = new RoundedButton
             {
                 Text = "📥 Export CSV",
-                Size = new Size(120, 36),
+                Size = new Size(130, 38),
                 IsGradient = false,
                 FlatColor = AppTheme.SurfaceMid,
-                CornerRadius = 8,
-                Margin = new Padding(8, 8, 0, 0)
+                CornerRadius = 10,
+                Margin = new Padding(10, 8, 0, 0)
             };
             exportBtn.Click += ExportButton_Click;
             filterFlow.Controls.Add(exportBtn);
@@ -110,7 +105,11 @@ namespace SecureVault.UI.UserControls
             root.Controls.Add(_countLabel, 0, 1);
 
             // ── DataGridView ──
-            _grid = new StyledDataGridView { Dock = DockStyle.Fill };
+            _grid = new StyledDataGridView
+            {
+                Dock = DockStyle.Fill,
+                EmptyMessage = "No documents found. Upload files to get started!"
+            };
             SetupGridColumns();
             SetupContextMenu();
             _grid.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) OpenSelectedFile(); };
@@ -228,14 +227,19 @@ namespace SecureVault.UI.UserControls
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 { FileName = doc.FilePath, UseShellExecute = true });
             }
-            else MessageBox.Show("File not found on disk.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            else
+                ToastNotification.Show("File not found on disk.", ToastType.Error);
         }
 
         private void EditSelectedDocument()
         {
             var doc = GetSelectedDocument(); if (doc == null) return;
             var editForm = new EditDocumentForm(doc);
-            if (editForm.ShowDialog() == DialogResult.OK) LoadDocuments();
+            if (editForm.ShowDialog() == DialogResult.OK)
+            {
+                LoadDocuments();
+                ToastNotification.Show("Document updated!", ToastType.Success);
+            }
         }
 
         private void ToggleImportant()
@@ -243,16 +247,21 @@ namespace SecureVault.UI.UserControls
             var doc = GetSelectedDocument(); if (doc == null) return;
             _docService.ToggleImportant(doc.DocumentID);
             LoadDocuments();
+            ToastNotification.Show(
+                doc.IsImportant ? "Removed from important" : "Marked as important",
+                ToastType.Info);
         }
 
         private void DeleteSelectedDocument()
         {
             var doc = GetSelectedDocument(); if (doc == null) return;
-            if (MessageBox.Show($"Delete '{doc.FileName}'?", "Confirm Delete",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (ModernDialog.ConfirmDelete("Delete Document",
+                $"Are you sure you want to delete '{doc.FileName}'?",
+                "Delete", FindForm()))
             {
                 _docService.SoftDelete(doc.DocumentID, SessionManager.CurrentUserID);
                 LoadDocuments();
+                ToastNotification.Show("Document moved to recycle bin", ToastType.Info);
             }
         }
 
@@ -267,14 +276,14 @@ namespace SecureVault.UI.UserControls
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 File.WriteAllText(sfd.FileName, _docService.ExportToCsv(_documents));
-                MessageBox.Show("Export complete!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ToastNotification.Show("Export complete!", ToastType.Success);
             }
         }
 
         private StyledComboBox CreateComboBox(int width) => new()
         {
-            Size = new Size(width, 36),
-            Margin = new Padding(0, 8, 8, 0)
+            Size = new Size(width, 38),
+            Margin = new Padding(0, 8, 10, 0)
         };
     }
 
@@ -307,13 +316,14 @@ namespace SecureVault.UI.UserControls
         {
             _doc = doc;
             Text = "Edit Document";
-            Size = new Size(460, 440);
+            Size = new Size(460, 460);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false; MinimizeBox = false;
             BackColor = AppTheme.PrimaryDark;
             AutoScaleMode = AutoScaleMode.None;
             BuildUI();
+            Load += (s, e) => AnimationHelper.FadeIn(this, 300);
         }
 
         private void BuildUI()
@@ -321,14 +331,14 @@ namespace SecureVault.UI.UserControls
             var layout = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 11,
-                BackColor = Color.Transparent, Padding = new Padding(20, 15, 20, 15)
+                BackColor = Color.Transparent, Padding = new Padding(24, 18, 24, 18)
             };
             for (int i = 0; i < 5; i++)
             {
                 layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
-                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
             }
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Buttons row
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
             Controls.Add(layout);
 
             int r = 0;
@@ -345,10 +355,7 @@ namespace SecureVault.UI.UserControls
             layout.Controls.Add(_tagsBox, 0, r++);
 
             layout.Controls.Add(MakeLabel("Category"), 0, r++);
-            _catCombo = new StyledComboBox
-            {
-                Dock = DockStyle.Fill
-            };
+            _catCombo = new StyledComboBox { Dock = DockStyle.Fill };
             _catCombo.Items.Add("None");
             _cats = _catService.GetCategories(SessionManager.CurrentUserID);
             int selIdx = 0;
@@ -360,7 +367,7 @@ namespace SecureVault.UI.UserControls
             _catCombo.SelectedIndex = selIdx;
             layout.Controls.Add(_catCombo, 0, r++);
 
-            layout.Controls.Add(MakeLabel(""), 0, r++); // spacer for label row
+            layout.Controls.Add(MakeLabel(""), 0, r++);
             _importantCheck = new CheckBox
             {
                 Text = "  Mark as Important", Checked = _doc.IsImportant,
@@ -369,18 +376,17 @@ namespace SecureVault.UI.UserControls
             };
             layout.Controls.Add(_importantCheck, 0, r++);
 
-            // Buttons row
             var btnFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight,
                 BackColor = Color.Transparent
             };
-            var saveBtn = new RoundedButton { Text = "Save Changes", Size = new Size(180, 40), Margin = new Padding(0, 4, 10, 0) };
+            var saveBtn = new RoundedButton { Text = "Save Changes", Size = new Size(180, 42), Margin = new Padding(0, 4, 10, 0) };
             saveBtn.Click += SaveClick;
             btnFlow.Controls.Add(saveBtn);
             var cancelBtn = new RoundedButton
             {
-                Text = "Cancel", Size = new Size(120, 40), IsGradient = false,
+                Text = "Cancel", Size = new Size(120, 42), IsGradient = false,
                 FlatColor = AppTheme.SurfaceMid, Margin = new Padding(0, 4, 0, 0)
             };
             cancelBtn.Click += (s, e) => Close();
@@ -398,7 +404,7 @@ namespace SecureVault.UI.UserControls
 
             var (success, msg) = _docService.UpdateDocument(_doc);
             if (success) { DialogResult = DialogResult.OK; Close(); }
-            else MessageBox.Show(msg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            else ToastNotification.Show(msg, ToastType.Error);
         }
 
         private Label MakeLabel(string text) => new()

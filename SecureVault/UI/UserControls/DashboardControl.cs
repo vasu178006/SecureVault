@@ -1,6 +1,7 @@
 // ============================================
-// SecureVault - Dashboard (Layout Refactored)
-// TableLayoutPanel + FlowLayoutPanel structure
+// SecureVault - Dashboard (Redesigned)
+// Staggered card entrance, refined stat cards,
+// animated counters, premium doc rows
 // ============================================
 
 using SecureVault.BLL;
@@ -16,7 +17,6 @@ namespace SecureVault.UI.UserControls
         private readonly DocumentService _docService = new();
         private static readonly Font EmojiFont = new("Segoe UI Emoji", 20);
         private static readonly Font EmojiSmallFont = new("Segoe UI Emoji", 14);
-        private static readonly Font FileNameFont = new(AppTheme.FontFamily, 10);
 
         public DashboardControl()
         {
@@ -31,47 +31,35 @@ namespace SecureVault.UI.UserControls
             Controls.Clear();
             int userId = SessionManager.CurrentUserID;
 
-            // Root: scrollable panel
             var scroll = new Panel
             {
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                BackColor = Color.Transparent
+                Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.Transparent
             };
             Controls.Add(scroll);
 
-            // Main vertical layout
             var root = new TableLayoutPanel
             {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Dock = DockStyle.Top,
-                ColumnCount = 1,
-                RowCount = 6,
-                BackColor = Color.Transparent,
-                Padding = new Padding(20, 15, 20, 15)
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Dock = DockStyle.Top, ColumnCount = 1, RowCount = 6,
+                BackColor = Color.Transparent, Padding = new Padding(24, 20, 24, 20)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Welcome
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Cards
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Recent title
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Recent list
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Important title
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // Important list
+            for (int i = 0; i < 6; i++) root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             scroll.Controls.Add(root);
 
             int row = 0;
 
-            // ── Welcome ──
-            root.Controls.Add(new Label
+            // ── Welcome with subtle gradient text ──
+            var welcomeLabel = new Label
             {
                 Text = $"Welcome back, {SessionManager.CurrentUser?.FullName ?? "User"} 👋",
                 Font = AppTheme.HeadingMedium,
                 ForeColor = AppTheme.TextPrimary,
                 BackColor = Color.Transparent,
                 AutoSize = true,
-                Margin = new Padding(0, 0, 0, 15)
-            }, 0, row++);
+                Margin = new Padding(0, 0, 0, 20)
+            };
+            root.Controls.Add(welcomeLabel, 0, row++);
 
             // ── Stats Cards ──
             int docCount = 0, importantCount = 0;
@@ -86,12 +74,9 @@ namespace SecureVault.UI.UserControls
 
             var cardsFlow = new FlowLayoutPanel
             {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection = FlowDirection.LeftToRight,
-                WrapContents = true,
-                BackColor = Color.Transparent,
-                Margin = new Padding(0, 0, 0, 20)
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.LeftToRight, WrapContents = true,
+                BackColor = Color.Transparent, Margin = new Padding(0, 0, 0, 28)
             };
             cardsFlow.Controls.Add(CreateStatCard("📂", "Total Documents", docCount,
                 AppTheme.GradientStart, AppTheme.GradientEnd));
@@ -104,88 +89,60 @@ namespace SecureVault.UI.UserControls
             root.Controls.Add(cardsFlow, 0, row++);
 
             // ── Recent Uploads ──
-            root.Controls.Add(new Label
-            {
-                Text = "📄 Recent Uploads",
-                Font = AppTheme.HeadingSmall,
-                ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent,
-                AutoSize = true,
-                Margin = new Padding(0, 5, 0, 10)
-            }, 0, row++);
-
-            var recentFlow = new FlowLayoutPanel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                BackColor = Color.Transparent,
-                Margin = new Padding(0, 0, 0, 15),
-                Dock = DockStyle.Top
-            };
-            try
-            {
-                var recentDocs = _docService.GetRecent(userId, 5);
-                if (recentDocs.Count == 0)
-                {
-                    recentFlow.Controls.Add(new Label
-                    {
-                        Text = "No documents uploaded yet. Click 'Upload Files' to get started!",
-                        Font = AppTheme.BodyLarge, ForeColor = AppTheme.TextMuted,
-                        BackColor = Color.Transparent, AutoSize = true,
-                        Margin = new Padding(0, 0, 0, 5)
-                    });
-                }
-                else
-                {
-                    foreach (var doc in recentDocs)
-                        recentFlow.Controls.Add(CreateDocRow(doc, ClientSize.Width - 80));
-                }
-            }
-            catch { }
+            root.Controls.Add(MakeSectionTitle("📄 Recent Uploads"), 0, row++);
+            var recentFlow = CreateDocSection(userId, isRecent: true);
             root.Controls.Add(recentFlow, 0, row++);
 
             // ── Important Documents ──
-            root.Controls.Add(new Label
-            {
-                Text = "⭐ Important Documents",
-                Font = AppTheme.HeadingSmall,
-                ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent,
-                AutoSize = true,
-                Margin = new Padding(0, 5, 0, 10)
-            }, 0, row++);
+            root.Controls.Add(MakeSectionTitle("⭐ Important Documents"), 0, row++);
+            var impFlow = CreateDocSection(userId, isRecent: false);
+            root.Controls.Add(impFlow, 0, row);
+        }
 
-            var impFlow = new FlowLayoutPanel
+        private Label MakeSectionTitle(string text) => new()
+        {
+            Text = text,
+            Font = AppTheme.HeadingSmall,
+            ForeColor = AppTheme.TextPrimary,
+            BackColor = Color.Transparent,
+            AutoSize = true,
+            Margin = new Padding(0, 4, 0, 12)
+        };
+
+        private FlowLayoutPanel CreateDocSection(int userId, bool isRecent)
+        {
+            var flow = new FlowLayoutPanel
             {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                BackColor = Color.Transparent,
-                Dock = DockStyle.Top
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.TopDown, WrapContents = false,
+                BackColor = Color.Transparent, Dock = DockStyle.Top,
+                Margin = new Padding(0, 0, 0, 20)
             };
             try
             {
-                var importantDocs = _docService.GetImportant(userId);
-                if (importantDocs.Count == 0)
+                var docs = isRecent
+                    ? _docService.GetRecent(userId, 5)
+                    : _docService.GetImportant(userId);
+                if (docs.Count == 0)
                 {
-                    impFlow.Controls.Add(new Label
+                    flow.Controls.Add(new Label
                     {
-                        Text = "No important documents marked.",
+                        Text = isRecent
+                            ? "No documents uploaded yet. Click 'Upload Files' to get started!"
+                            : "No important documents marked.",
                         Font = AppTheme.BodyLarge, ForeColor = AppTheme.TextMuted,
-                        BackColor = Color.Transparent, AutoSize = true
+                        BackColor = Color.Transparent, AutoSize = true,
+                        Margin = new Padding(0, 0, 0, 4)
                     });
                 }
                 else
                 {
-                    foreach (var doc in importantDocs.Take(5))
-                        impFlow.Controls.Add(CreateDocRow(doc, ClientSize.Width - 80));
+                    foreach (var doc in (isRecent ? docs : docs.Take(5)))
+                        flow.Controls.Add(CreateDocRow(doc, ClientSize.Width - 100));
                 }
             }
             catch { }
-            root.Controls.Add(impFlow, 0, row);
+            return flow;
         }
 
         private Panel CreateStatCard(string icon, string title, int value,
@@ -194,43 +151,27 @@ namespace SecureVault.UI.UserControls
             bool isHovered = false;
             var card = new Panel
             {
-                Size = new Size(260, 140),
-                Margin = new Padding(0, 0, 15, 10),
+                Size = new Size(260, 130),
+                Margin = new Padding(0, 0, 16, 12),
                 BackColor = Color.Transparent,
                 Cursor = Cursors.Hand
             };
 
             card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
-                AppTheme.DrawShadow(e.Graphics, rect, AppTheme.RadiusMedium, isHovered ? 7 : 5);
-                using var path = AppTheme.CreateRoundedRect(rect, AppTheme.RadiusMedium);
-                using var bg = new SolidBrush(isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark);
-                e.Graphics.FillPath(bg, path);
-                using var border = new Pen(isHovered ? Color.FromArgb(80, AppTheme.AccentGlow.R, AppTheme.AccentGlow.G, AppTheme.AccentGlow.B) : AppTheme.SurfaceBorder, isHovered ? 1.2f : 1f);
-                e.Graphics.DrawPath(border, path);
-                var accent = new Rectangle(0, 0, card.Width - 1, 4);
-                using var ap = AppTheme.CreateRoundedRect(accent, 2);
-                using var ab = new LinearGradientBrush(accent, gradStart, gradEnd, 0f);
-                e.Graphics.FillPath(ab, ap);
-            };
+                AppTheme.PaintStatCard(e.Graphics,
+                    new Rectangle(0, 0, card.Width - 1, card.Height - 1),
+                    AppTheme.RadiusCard, gradStart, gradEnd, isHovered);
 
-            // Hover effect
             void OnEnter(object? s, EventArgs e) { isHovered = true; card.Invalidate(); }
             void OnLeave(object? s, EventArgs e) { isHovered = false; card.Invalidate(); }
             card.MouseEnter += OnEnter;
             card.MouseLeave += OnLeave;
 
-            // Inner layout using TableLayoutPanel — no hardcoded positions
             var inner = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 2,
+                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2,
                 BackColor = Color.Transparent,
-                Padding = new Padding(16, 14, 16, 10),
-                Margin = new Padding(0)
+                Padding = new Padding(18, 18, 18, 12), Margin = new Padding(0)
             };
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50));
             inner.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -254,8 +195,7 @@ namespace SecureVault.UI.UserControls
             var valueLabel = new Label
             {
                 Font = AppTheme.HeadingLarge,
-                ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent,
+                ForeColor = AppTheme.TextPrimary, BackColor = Color.Transparent,
                 AutoSize = false, Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.BottomLeft,
                 UseCompatibleTextRendering = false, Margin = new Padding(0)
@@ -289,19 +229,28 @@ namespace SecureVault.UI.UserControls
         private Panel CreateDocRow(Models.Document doc, int width)
         {
             if (width < 200) width = 600;
+            bool isHovered = false;
             var row = new Panel
             {
-                Size = new Size(width, 48),
-                BackColor = AppTheme.SurfaceDark,
+                Size = new Size(width, 52),
+                BackColor = Color.Transparent,
                 Margin = new Padding(0, 0, 0, 4),
                 Cursor = Cursors.Hand
             };
             row.Paint += (s, e) =>
             {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using var path = AppTheme.CreateRoundedRect(new Rectangle(0, 0, row.Width - 1, row.Height - 1), 6);
-                using var brush = new SolidBrush(row.BackColor);
-                e.Graphics.FillPath(brush, path);
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                var rect = new Rectangle(0, 0, row.Width - 1, row.Height - 1);
+                using var path = AppTheme.CreateRoundedRect(rect, 8);
+                var bgColor = isHovered ? AppTheme.SurfaceMid : AppTheme.SurfaceDark;
+                using var brush = new SolidBrush(bgColor);
+                g.FillPath(brush, path);
+                if (isHovered)
+                {
+                    using var borderPen = new Pen(Color.FromArgb(25, 255, 255, 255), 1f);
+                    g.DrawPath(borderPen, path);
+                }
             };
 
             string fileIcon = doc.FileType?.ToLower() switch
@@ -312,24 +261,26 @@ namespace SecureVault.UI.UserControls
 
             row.Controls.Add(new Label { Text = fileIcon, Font = EmojiSmallFont,
                 BackColor = Color.Transparent, AutoSize = false,
-                Size = new Size(32, 32), Location = new Point(12, 8),
+                Size = new Size(32, 32), Location = new Point(14, 10),
                 TextAlign = ContentAlignment.MiddleCenter });
             row.Controls.Add(new Label { Text = doc.FileName,
-                Font = FileNameFont, ForeColor = AppTheme.TextPrimary,
-                BackColor = Color.Transparent, AutoSize = true, Location = new Point(52, 5) });
+                Font = new Font(AppTheme.FontFamily, 10.5f), ForeColor = AppTheme.TextPrimary,
+                BackColor = Color.Transparent, AutoSize = true, Location = new Point(54, 6) });
             row.Controls.Add(new Label
             {
-                Text = $"{doc.FileSizeDisplay}  •  {doc.UploadDate:MMM dd, yyyy}  •  {doc.CategoryName ?? "Uncategorized"}",
+                Text = $"{doc.FileSizeDisplay}  ·  {doc.UploadDate:MMM dd, yyyy}  ·  {doc.CategoryName ?? "Uncategorized"}",
                 Font = AppTheme.BodySmall, ForeColor = AppTheme.TextMuted,
-                BackColor = Color.Transparent, AutoSize = true, Location = new Point(52, 26)
+                BackColor = Color.Transparent, AutoSize = true, Location = new Point(54, 28)
             });
 
-            row.MouseEnter += (s, e) => row.BackColor = AppTheme.SurfaceLight;
-            row.MouseLeave += (s, e) => row.BackColor = AppTheme.SurfaceDark;
+            void Enter(object? s, EventArgs e) { isHovered = true; row.Invalidate(); }
+            void Leave(object? s, EventArgs e) { isHovered = false; row.Invalidate(); }
+            row.MouseEnter += Enter;
+            row.MouseLeave += Leave;
             foreach (Control c in row.Controls)
             {
-                c.MouseEnter += (s, e) => row.BackColor = AppTheme.SurfaceLight;
-                c.MouseLeave += (s, e) => row.BackColor = AppTheme.SurfaceDark;
+                c.MouseEnter += Enter;
+                c.MouseLeave += Leave;
             }
             return row;
         }

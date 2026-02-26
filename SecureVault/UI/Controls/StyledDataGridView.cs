@@ -1,6 +1,7 @@
 // ============================================
-// SecureVault - Styled DataGridView
-// Modern dark-themed DataGridView
+// SecureVault - Styled DataGridView (Redesigned)
+// Smooth row hover, refined styling,
+// empty state support
 // ============================================
 
 using SecureVault.UI.Theme;
@@ -8,16 +9,19 @@ using SecureVault.UI.Theme;
 namespace SecureVault.UI.Controls
 {
     /// <summary>
-    /// A DataGridView styled with the dark theme.
+    /// A premium DataGridView with dark theme, smooth row hover,
+    /// and empty-state message support.
     /// </summary>
     public class StyledDataGridView : DataGridView
     {
+        public string EmptyMessage { get; set; } = "No items to display";
+
         public StyledDataGridView()
         {
             // General
             BackgroundColor = AppTheme.PrimaryDark;
             BorderStyle = BorderStyle.None;
-            GridColor = AppTheme.SurfaceBorder;
+            GridColor = Color.FromArgb(30, 255, 255, 255);
             CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             RowHeadersVisible = false;
             AllowUserToAddRows = false;
@@ -28,8 +32,8 @@ namespace SecureVault.UI.Controls
             MultiSelect = false;
             AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            ColumnHeadersHeight = 45;
-            RowTemplate.Height = 42;
+            ColumnHeadersHeight = 48;
+            RowTemplate.Height = 48;
             EnableHeadersVisualStyles = false;
             ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
             RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
@@ -39,13 +43,13 @@ namespace SecureVault.UI.Controls
             // Header style
             ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
             {
-                BackColor = AppTheme.SurfaceMid,
+                BackColor = AppTheme.SurfaceDark,
                 ForeColor = AppTheme.TextSecondary,
                 Font = new Font(AppTheme.FontFamily, 10, FontStyle.Bold),
-                SelectionBackColor = AppTheme.SurfaceMid,
+                SelectionBackColor = AppTheme.SurfaceDark,
                 SelectionForeColor = AppTheme.TextSecondary,
                 Alignment = DataGridViewContentAlignment.MiddleLeft,
-                Padding = new Padding(8, 0, 0, 0)
+                Padding = new Padding(10, 0, 0, 0)
             };
 
             // Default cell style
@@ -53,10 +57,10 @@ namespace SecureVault.UI.Controls
             {
                 BackColor = AppTheme.PrimaryDark,
                 ForeColor = AppTheme.TextPrimary,
-                SelectionBackColor = Color.FromArgb(50, AppTheme.GradientStart.R, AppTheme.GradientStart.G, AppTheme.GradientStart.B),
+                SelectionBackColor = Color.FromArgb(40, AppTheme.GradientStart.R, AppTheme.GradientStart.G, AppTheme.GradientStart.B),
                 SelectionForeColor = AppTheme.TextPrimary,
                 Font = AppTheme.BodyRegular,
-                Padding = new Padding(8, 0, 0, 0)
+                Padding = new Padding(10, 0, 0, 0)
             };
 
             // Alternating rows
@@ -64,31 +68,54 @@ namespace SecureVault.UI.Controls
             {
                 BackColor = AppTheme.SurfaceDark,
                 ForeColor = AppTheme.TextPrimary,
-                SelectionBackColor = Color.FromArgb(50, AppTheme.GradientStart.R, AppTheme.GradientStart.G, AppTheme.GradientStart.B),
+                SelectionBackColor = Color.FromArgb(40, AppTheme.GradientStart.R, AppTheme.GradientStart.G, AppTheme.GradientStart.B),
                 SelectionForeColor = AppTheme.TextPrimary
             };
 
-            // Scrollbar styling via event
             Scroll += (s, e) => Invalidate();
         }
 
         protected override void OnCellMouseEnter(DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
-            {
                 Rows[e.RowIndex].DefaultCellStyle.BackColor = AppTheme.SurfaceLight;
-            }
             base.OnCellMouseEnter(e);
         }
 
         protected override void OnCellMouseLeave(DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
-            {
                 Rows[e.RowIndex].DefaultCellStyle.BackColor =
                     e.RowIndex % 2 == 0 ? AppTheme.PrimaryDark : AppTheme.SurfaceDark;
-            }
             base.OnCellMouseLeave(e);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+
+            // Empty state overlay
+            if (Rows.Count == 0 && !string.IsNullOrEmpty(EmptyMessage))
+            {
+                var g = e.Graphics;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+                string icon = "📭";
+                using var iconFont = new Font("Segoe UI Emoji", 28);
+                var iconSize = TextRenderer.MeasureText(g, icon, iconFont);
+                var textSize = TextRenderer.MeasureText(g, EmptyMessage, AppTheme.BodyLarge);
+
+                int totalHeight = iconSize.Height + textSize.Height + 8;
+                int startY = (Height - totalHeight) / 2;
+
+                TextRenderer.DrawText(g, icon, iconFont,
+                    new Rectangle(0, startY, Width, iconSize.Height),
+                    AppTheme.TextMuted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+
+                TextRenderer.DrawText(g, EmptyMessage, AppTheme.BodyLarge,
+                    new Rectangle(0, startY + iconSize.Height + 8, Width, textSize.Height),
+                    AppTheme.TextMuted, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+            }
         }
     }
 }

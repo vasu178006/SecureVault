@@ -1,5 +1,6 @@
 // ============================================
-// SecureVault - Recycle Bin (Layout Refactored)
+// SecureVault - Recycle Bin (Redesigned)
+// Toast/ModernDialog, consistent spacing
 // ============================================
 
 using SecureVault.BLL;
@@ -30,11 +31,11 @@ namespace SecureVault.UI.UserControls
             var root = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-                BackColor = Color.Transparent, Padding = new Padding(15, 10, 15, 10)
+                BackColor = Color.Transparent, Padding = new Padding(20, 14, 20, 14)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 45));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             Controls.Add(root);
 
@@ -52,10 +53,10 @@ namespace SecureVault.UI.UserControls
             };
             var restoreBtn = new RoundedButton
             {
-                Text = "♻️ Restore", Size = new Size(140, 40),
+                Text = "♻️ Restore", Size = new Size(140, 42),
                 ButtonColorStart = AppTheme.AccentTeal, ButtonColorEnd = AppTheme.AccentCyan,
                 HoverColorStart = Color.FromArgb(40, 204, 186), HoverColorEnd = Color.FromArgb(26, 202, 232),
-                Margin = new Padding(0, 5, 10, 0)
+                Margin = new Padding(0, 6, 10, 0)
             };
             restoreBtn.Click += RestoreSelected;
             btnFlow.Controls.Add(restoreBtn);
@@ -64,21 +65,28 @@ namespace SecureVault.UI.UserControls
             {
                 var permBtn = new RoundedButton
                 {
-                    Text = "❌ Permanent Delete", Size = new Size(190, 40),
+                    Text = "❌ Permanent Delete", Size = new Size(190, 42),
                     ButtonColorStart = AppTheme.Error, ButtonColorEnd = Color.FromArgb(185, 28, 28),
                     HoverColorStart = Color.FromArgb(255, 88, 88), HoverColorEnd = Color.FromArgb(205, 48, 48),
-                    Margin = new Padding(0, 5, 0, 0)
+                    Margin = new Padding(0, 6, 0, 0)
                 };
                 permBtn.Click += PermanentDeleteSelected;
                 btnFlow.Controls.Add(permBtn);
             }
             root.Controls.Add(btnFlow, 0, 1);
 
-            _grid = new StyledDataGridView { Dock = DockStyle.Fill };
+            _grid = new StyledDataGridView
+            {
+                Dock = DockStyle.Fill,
+                EmptyMessage = "Recycle bin is empty"
+            };
             _grid.Columns.Add("FileName", "File Name");
-            _grid.Columns.Add("FileType", "Type"); _grid.Columns["FileType"].Width = 80; _grid.Columns["FileType"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            _grid.Columns.Add("FileSize", "Size"); _grid.Columns["FileSize"].Width = 90; _grid.Columns["FileSize"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            _grid.Columns.Add("UploadDate", "Uploaded"); _grid.Columns["UploadDate"].Width = 150; _grid.Columns["UploadDate"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns.Add("FileType", "Type");
+            _grid.Columns["FileType"].Width = 80; _grid.Columns["FileType"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns.Add("FileSize", "Size");
+            _grid.Columns["FileSize"].Width = 90; _grid.Columns["FileSize"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            _grid.Columns.Add("UploadDate", "Uploaded");
+            _grid.Columns["UploadDate"].Width = 150; _grid.Columns["UploadDate"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             root.Controls.Add(_grid, 0, 2);
 
             LoadDeletedDocs();
@@ -91,7 +99,8 @@ namespace SecureVault.UI.UserControls
             {
                 _deletedDocs = _docService.GetDeleted(SessionManager.CurrentUserID);
                 foreach (var doc in _deletedDocs)
-                    _grid.Rows.Add(doc.FileName, doc.FileType, doc.FileSizeDisplay, doc.UploadDate.ToString("MMM dd, yyyy HH:mm"));
+                    _grid.Rows.Add(doc.FileName, doc.FileType, doc.FileSizeDisplay,
+                        doc.UploadDate.ToString("MMM dd, yyyy HH:mm"));
             }
             catch { }
         }
@@ -102,7 +111,12 @@ namespace SecureVault.UI.UserControls
             int idx = _grid.SelectedRows[0].Index;
             if (idx >= _deletedDocs.Count) return;
             var (success, msg) = _docService.Restore(_deletedDocs[idx].DocumentID, SessionManager.CurrentUserID);
-            if (success) LoadDeletedDocs(); else MessageBox.Show(msg);
+            if (success)
+            {
+                LoadDeletedDocs();
+                ToastNotification.Show("Document restored!", ToastType.Success);
+            }
+            else ToastNotification.Show(msg, ToastType.Error);
         }
 
         private void PermanentDeleteSelected(object? sender, EventArgs e)
@@ -111,11 +125,18 @@ namespace SecureVault.UI.UserControls
             int idx = _grid.SelectedRows[0].Index;
             if (idx >= _deletedDocs.Count) return;
             var doc = _deletedDocs[idx];
-            if (MessageBox.Show($"Permanently delete '{doc.FileName}'? This cannot be undone!", "Confirm",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+
+            if (ModernDialog.ConfirmDelete("Permanent Delete",
+                $"Permanently delete '{doc.FileName}'?\nThis action cannot be undone!",
+                "Delete Forever", FindForm()))
             {
                 var (success, msg) = _docService.PermanentDelete(doc.DocumentID, SessionManager.CurrentUserID);
-                if (success) LoadDeletedDocs(); else MessageBox.Show(msg);
+                if (success)
+                {
+                    LoadDeletedDocs();
+                    ToastNotification.Show("File permanently deleted", ToastType.Info);
+                }
+                else ToastNotification.Show(msg, ToastType.Error);
             }
         }
     }

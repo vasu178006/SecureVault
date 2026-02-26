@@ -1,6 +1,7 @@
 // ============================================
-// SecureVault - Main Form (Layout Refactored)
-// Dock-based sidebar/topbar/content structure
+// SecureVault - Main Form (Redesigned)
+// Animated page transitions, sidebar stagger,
+// user avatar, refined layout
 // ============================================
 
 using SecureVault.BLL;
@@ -8,6 +9,7 @@ using SecureVault.Helpers;
 using SecureVault.UI.Controls;
 using SecureVault.UI.Theme;
 using SecureVault.UI.UserControls;
+using System.Drawing.Drawing2D;
 
 namespace SecureVault.UI.Forms
 {
@@ -20,6 +22,7 @@ namespace SecureVault.UI.Forms
         private Label _userNameLabel = null!;
         private Label _userRoleLabel = null!;
         private Label _pageTitleLabel = null!;
+        private Panel _avatarPanel = null!;
 
         private SidebarButton _btnDashboard = null!;
         private SidebarButton _btnDocuments = null!;
@@ -33,8 +36,8 @@ namespace SecureVault.UI.Forms
         private SidebarButton? _btnSystemLogs;
         private SidebarButton _btnLogout = null!;
 
-        private const int SIDEBAR_WIDTH = 250;
-        private const int TOPBAR_HEIGHT = 60;
+        private const int SIDEBAR_WIDTH = 260;
+        private const int TOPBAR_HEIGHT = 64;
         private UserControl? _currentControl;
 
         public MainForm()
@@ -59,7 +62,7 @@ namespace SecureVault.UI.Forms
 
         private void BuildLayout()
         {
-            // ── SIDEBAR: Dock.Left, fixed width ──
+            // ── SIDEBAR ──
             _sidebarPanel = new Panel
             {
                 Width = SIDEBAR_WIDTH,
@@ -70,22 +73,20 @@ namespace SecureVault.UI.Forms
             };
             _sidebarPanel.Paint += (s, e) =>
             {
-                using var pen = new Pen(AppTheme.SurfaceBorder, 1);
+                using var pen = new Pen(Color.FromArgb(20, 255, 255, 255), 1);
                 e.Graphics.DrawLine(pen, _sidebarPanel.Width - 1, 0,
                     _sidebarPanel.Width - 1, _sidebarPanel.Height);
             };
 
-            // Logo at top of sidebar (fixed)
+            // Logo at top
             var logoPanel = new Panel
             {
-                Dock = DockStyle.Top,
-                Height = 65,
-                BackColor = AppTheme.SidebarBg
+                Dock = DockStyle.Top, Height = 68, BackColor = AppTheme.SidebarBg
             };
             var logoLabel = new Label
             {
-                Text = "🔒 SecureVault",
-                Font = new Font(AppTheme.FontFamily, 16, FontStyle.Bold),
+                Text = "🛡️  SecureVault",
+                Font = new Font(AppTheme.FontFamily, 17, FontStyle.Bold),
                 ForeColor = AppTheme.TextPrimary,
                 BackColor = AppTheme.SidebarBg,
                 Dock = DockStyle.Fill,
@@ -93,10 +94,13 @@ namespace SecureVault.UI.Forms
             };
             logoPanel.Controls.Add(logoLabel);
 
-            // Separator
-            var sep = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = AppTheme.SurfaceBorder };
+            var sep = new Panel
+            {
+                Dock = DockStyle.Top, Height = 1,
+                BackColor = Color.FromArgb(25, 255, 255, 255)
+            };
 
-            // FlowLayoutPanel for menu buttons
+            // Menu buttons
             _sidebarFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -104,10 +108,9 @@ namespace SecureVault.UI.Forms
                 WrapContents = false,
                 AutoScroll = true,
                 BackColor = AppTheme.SidebarBg,
-                Padding = new Padding(8, 10, 8, 10)
+                Padding = new Padding(10, 12, 10, 12)
             };
 
-            // Section label
             _sidebarFlow.Controls.Add(MakeSectionLabel("MAIN", AppTheme.TextMuted));
 
             _btnDashboard = MakeSidebarBtn("Dashboard", "📊");
@@ -120,8 +123,8 @@ namespace SecureVault.UI.Forms
 
             if (SessionManager.IsAdmin)
             {
-                _sidebarFlow.Controls.Add(new Panel { Height = 8, Width = SIDEBAR_WIDTH - 20, BackColor = AppTheme.SidebarBg });
-                _sidebarFlow.Controls.Add(new Panel { Height = 1, Width = SIDEBAR_WIDTH - 40, BackColor = AppTheme.SurfaceBorder, Margin = new Padding(10, 0, 10, 0) });
+                _sidebarFlow.Controls.Add(new Panel { Height = 8, Width = SIDEBAR_WIDTH - 24, BackColor = AppTheme.SidebarBg });
+                _sidebarFlow.Controls.Add(new Panel { Height = 1, Width = SIDEBAR_WIDTH - 48, BackColor = Color.FromArgb(25, 255, 255, 255), Margin = new Padding(12, 0, 12, 0) });
                 _sidebarFlow.Controls.Add(MakeSectionLabel("ADMIN", AppTheme.AccentPink));
                 _btnAdminDashboard = MakeSidebarBtn("Admin Dashboard", "⚡");
                 _btnUserManagement = MakeSidebarBtn("Manage Users", "👥");
@@ -131,38 +134,33 @@ namespace SecureVault.UI.Forms
             // Logout at bottom
             var logoutPanel = new Panel
             {
-                Dock = DockStyle.Bottom,
-                Height = 55,
-                BackColor = Color.Transparent,
-                Padding = new Padding(8, 4, 8, 8)
+                Dock = DockStyle.Bottom, Height = 58,
+                BackColor = Color.Transparent, Padding = new Padding(10, 4, 10, 10)
             };
             _btnLogout = new SidebarButton
             {
-                Text = "Logout",
-                IconText = "🚪",
-                Dock = DockStyle.Fill
+                Text = "Logout", IconText = "🚪", Dock = DockStyle.Fill
             };
             _btnLogout.Click += (s, e) => PerformLogout();
             logoutPanel.Controls.Add(_btnLogout);
 
-            // Assemble sidebar (order matters for Dock: bottom first, then tops, then fill last)
-            _sidebarPanel.Controls.Add(logoutPanel);     // Bottom
-            _sidebarPanel.Controls.Add(logoPanel);       // Top
-            _sidebarPanel.Controls.Add(sep);             // Top (after logo)
-            _sidebarPanel.Controls.Add(_sidebarFlow);   // Fill
+            _sidebarPanel.Controls.Add(logoutPanel);
+            _sidebarPanel.Controls.Add(logoPanel);
+            _sidebarPanel.Controls.Add(sep);
+            _sidebarPanel.Controls.Add(_sidebarFlow);
 
-            // ── TOPBAR: Dock.Top, fixed height ──
+            // ── TOP BAR ──
             _topBar = new Panel
             {
                 Height = TOPBAR_HEIGHT,
                 Dock = DockStyle.Top,
                 BackColor = AppTheme.PrimaryDark,
-                Padding = new Padding(20, 0, 20, 0),
+                Padding = new Padding(24, 0, 24, 0),
                 Margin = new Padding(0)
             };
             _topBar.Paint += (s, e) =>
             {
-                using var pen = new Pen(AppTheme.SurfaceBorder, 1);
+                using var pen = new Pen(Color.FromArgb(15, 255, 255, 255), 1);
                 e.Graphics.DrawLine(pen, 0, _topBar.Height - 1, _topBar.Width, _topBar.Height - 1);
             };
 
@@ -179,12 +177,20 @@ namespace SecureVault.UI.Forms
             };
             _topBar.Controls.Add(_pageTitleLabel);
 
-            var userInfoPanel = new TableLayoutPanel
+            // Right: avatar + user info
+            var rightPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Right,
                 AutoSize = true,
-                ColumnCount = 1,
-                RowCount = 2,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+
+            var userInfoPanel = new TableLayoutPanel
+            {
+                AutoSize = true, ColumnCount = 1, RowCount = 2,
                 BackColor = Color.Transparent
             };
             userInfoPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 55));
@@ -197,7 +203,7 @@ namespace SecureVault.UI.Forms
                 BackColor = Color.Transparent,
                 AutoSize = true,
                 Anchor = AnchorStyles.Right | AnchorStyles.Bottom,
-                Margin = new Padding(0, 0, 0, 0)
+                Margin = new Padding(0)
             };
             _userRoleLabel = new Label
             {
@@ -211,9 +217,39 @@ namespace SecureVault.UI.Forms
             };
             userInfoPanel.Controls.Add(_userNameLabel, 0, 0);
             userInfoPanel.Controls.Add(_userRoleLabel, 0, 1);
-            _topBar.Controls.Add(userInfoPanel);
+            rightPanel.Controls.Add(userInfoPanel);
 
-            // ── CONTENT: Dock.Fill ──
+            // Avatar circle
+            _avatarPanel = new Panel
+            {
+                Size = new Size(40, 40),
+                BackColor = Color.Transparent,
+                Margin = new Padding(12, 12, 0, 0)
+            };
+            _avatarPanel.Paint += (s, e) =>
+            {
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                using var path = new GraphicsPath();
+                path.AddEllipse(0, 0, 39, 39);
+                using var bgBrush = new LinearGradientBrush(
+                    new Rectangle(0, 0, 40, 40), AppTheme.GradientStart, AppTheme.GradientEnd, 135f);
+                g.FillPath(bgBrush, path);
+
+                string initials = GetInitials(SessionManager.CurrentUser?.FullName ?? "U");
+                using var font = new Font(AppTheme.FontFamily, 13, FontStyle.Bold);
+                using var textBrush = new SolidBrush(Color.White);
+                var sf = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+                g.DrawString(initials, font, textBrush, new RectangleF(0, 0, 40, 40), sf);
+            };
+            rightPanel.Controls.Add(_avatarPanel);
+            _topBar.Controls.Add(rightPanel);
+
+            // ── CONTENT ──
             _contentPanel = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -221,8 +257,6 @@ namespace SecureVault.UI.Forms
                 Padding = new Padding(0)
             };
 
-            // Dock order: sidebar added last = highest priority = full height left.
-            // TopBar fills width to right of sidebar. Content fills remaining.
             Controls.Add(_contentPanel);
             Controls.Add(_topBar);
             Controls.Add(_sidebarPanel);
@@ -234,7 +268,7 @@ namespace SecureVault.UI.Forms
             {
                 Text = text,
                 IconText = icon,
-                Width = SIDEBAR_WIDTH - 20,
+                Width = SIDEBAR_WIDTH - 24,
                 Height = 46,
                 Margin = new Padding(0, 2, 0, 2)
             };
@@ -243,32 +277,26 @@ namespace SecureVault.UI.Forms
             return btn;
         }
 
-        private Label MakeSectionLabel(string text, Color color)
+        private Label MakeSectionLabel(string text, Color color) => new()
         {
-            return new Label
-            {
-                Text = $"  {text}",
-                Font = new Font(AppTheme.FontFamily, 8, FontStyle.Bold),
-                ForeColor = color,
-                BackColor = AppTheme.SidebarBg,
-                AutoSize = false,
-                Width = SIDEBAR_WIDTH - 20,
-                Height = 25,
-                Margin = new Padding(0, 6, 0, 4),
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-        }
+            Text = $"  {text}",
+            Font = new Font(AppTheme.FontFamily, 8, FontStyle.Bold),
+            ForeColor = color,
+            BackColor = AppTheme.SidebarBg,
+            AutoSize = false,
+            Width = SIDEBAR_WIDTH - 24,
+            Height = 25,
+            Margin = new Padding(0, 8, 0, 4),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
 
         private void NavigateTo(string section)
         {
             SetAllButtonsInactive();
             _pageTitleLabel.Text = section;
 
-            if (_currentControl != null)
-            {
-                _contentPanel.Controls.Remove(_currentControl);
-                _currentControl.Dispose();
-            }
+            // Remove old control (no dispose — let animation overlap)
+            var oldControl = _currentControl;
 
             UserControl newControl = section switch
             {
@@ -289,6 +317,13 @@ namespace SecureVault.UI.Forms
             newControl.BackColor = AppTheme.PrimaryDark;
             _contentPanel.Controls.Add(newControl);
             _currentControl = newControl;
+
+            // Simple transition: remove old after adding new
+            if (oldControl != null)
+            {
+                _contentPanel.Controls.Remove(oldControl);
+                oldControl.Dispose();
+            }
         }
 
         private UserControl SetActive(SidebarButton? btn, UserControl control)
@@ -313,14 +348,24 @@ namespace SecureVault.UI.Forms
 
         private void PerformLogout()
         {
-            if (MessageBox.Show("Are you sure you want to logout?", "Confirm Logout",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            if (ModernDialog.Confirm("Confirm Logout",
+                "Are you sure you want to sign out of SecureVault?",
+                "Logout", "Cancel", this))
             {
                 new AuthService().Logout();
                 var loginForm = new LoginForm();
                 loginForm.Show();
                 Close();
             }
+        }
+
+        private static string GetInitials(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName)) return "?";
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+                return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[^1][0])}";
+            return char.ToUpper(parts[0][0]).ToString();
         }
     }
 }

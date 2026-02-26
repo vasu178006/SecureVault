@@ -1,5 +1,6 @@
 // ============================================
-// SecureVault - Change Password Form (Layout Refactored)
+// SecureVault - Change Password Form (Redesigned)
+// Modern dialog styling, validation feedback
 // ============================================
 
 using SecureVault.BLL;
@@ -21,7 +22,7 @@ namespace SecureVault.UI.Forms
         public ChangePasswordForm()
         {
             Text = "Change Password";
-            Size = new Size(420, 420);
+            Size = new Size(420, 440);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -33,7 +34,6 @@ namespace SecureVault.UI.Forms
             BuildUI();
             Load += (s, e) => AnimationHelper.FadeIn(this, 300);
 
-            // Enter key submits
             KeyPreview = true;
             KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) ChangeButton_Click(this, EventArgs.Empty); };
         }
@@ -42,21 +42,18 @@ namespace SecureVault.UI.Forms
         {
             var layout = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 9,
-                BackColor = Color.Transparent,
-                Padding = new Padding(30, 20, 30, 20)
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 9,
+                BackColor = Color.Transparent, Padding = new Padding(30, 24, 30, 20)
             };
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35));  // Title
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Label
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Input
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));  // Error
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));  // Button
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));   // Title
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Label
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Label
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));   // Label
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));   // Input
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));   // Error
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));   // Button
             Controls.Add(layout);
 
             int r = 0;
@@ -68,13 +65,16 @@ namespace SecureVault.UI.Forms
             }, 0, r++);
 
             layout.Controls.Add(MakeLabel("Current Password"), 0, r++);
-            _currentPassBox = MakeInput("Enter current password", true); layout.Controls.Add(_currentPassBox, 0, r++);
+            _currentPassBox = MakeInput("Enter current password", true);
+            layout.Controls.Add(_currentPassBox, 0, r++);
 
             layout.Controls.Add(MakeLabel("New Password"), 0, r++);
-            _newPassBox = MakeInput("Enter new password", true); layout.Controls.Add(_newPassBox, 0, r++);
+            _newPassBox = MakeInput("Enter new password", true);
+            layout.Controls.Add(_newPassBox, 0, r++);
 
             layout.Controls.Add(MakeLabel("Confirm New Password"), 0, r++);
-            _confirmPassBox = MakeInput("Re-enter new password", true); layout.Controls.Add(_confirmPassBox, 0, r++);
+            _confirmPassBox = MakeInput("Re-enter new password", true);
+            layout.Controls.Add(_confirmPassBox, 0, r++);
 
             _errorLabel = new Label
             {
@@ -112,8 +112,16 @@ namespace SecureVault.UI.Forms
             var (success, message) = _authService.ChangePassword(
                 SessionManager.CurrentUserID,
                 _currentPassBox.Text, _newPassBox.Text, _confirmPassBox.Text);
-            if (success) { MessageBox.Show(message, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information); Close(); }
-            else _errorLabel.Text = message;
+            if (success)
+            {
+                ToastNotification.Show("Password updated successfully!", ToastType.Success);
+                Close();
+            }
+            else
+            {
+                _errorLabel.Text = message;
+                AnimationHelper.ShakeControl(_errorLabel, 4, 300);
+            }
         }
     }
 }

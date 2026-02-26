@@ -1,6 +1,7 @@
 // ============================================
-// SecureVault - Upload Control (Layout Refactored)
-// TableLayoutPanel structure with dock-fill drop zone
+// SecureVault - Upload Control (Redesigned)
+// Animated drop zone, modern progress bar,
+// toast notifications for feedback
 // ============================================
 
 using SecureVault.BLL;
@@ -19,7 +20,10 @@ namespace SecureVault.UI.UserControls
         private RoundedTextBox _descBox = null!;
         private RoundedTextBox _tagsBox = null!;
         private Label _statusLabel = null!;
-        private ProgressBar _progressBar = null!;
+        private ModernProgressBar _progressBar = null!;
+        private bool _isDragOver;
+        private Panel _dropZone = null!;
+        private Label _dropLabel = null!;
 
         public UploadControl()
         {
@@ -36,19 +40,16 @@ namespace SecureVault.UI.UserControls
 
             var root = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 6,
-                BackColor = Color.Transparent,
-                Padding = new Padding(20, 15, 20, 15)
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 6,
+                BackColor = Color.Transparent, Padding = new Padding(24, 20, 24, 20)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));   // Title
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));  // Drop zone
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));  // Options
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));   // Browse + status
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));   // Progress
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // Spacer
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));    // Title
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));   // Drop zone
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 150));   // Options
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 55));    // Browse + status
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));    // Progress
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));    // Spacer
             Controls.Add(root);
 
             // Title
@@ -63,25 +64,33 @@ namespace SecureVault.UI.UserControls
             }, 0, 0);
 
             // Drop zone
-            var dropZone = new Panel
+            _dropZone = new Panel
             {
-                Dock = DockStyle.Fill,
-                BackColor = Color.Transparent,
-                AllowDrop = true,
-                Cursor = Cursors.Hand,
-                Margin = new Padding(0, 5, 0, 10)
+                Dock = DockStyle.Fill, BackColor = Color.Transparent,
+                AllowDrop = true, Cursor = Cursors.Hand,
+                Margin = new Padding(0, 8, 0, 12)
             };
-            dropZone.Paint += (s, e) =>
+            _dropZone.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                var rect = new Rectangle(2, 2, dropZone.Width - 5, dropZone.Height - 5);
+                var rect = new Rectangle(2, 2, _dropZone.Width - 5, _dropZone.Height - 5);
                 using var path = AppTheme.CreateRoundedRect(rect, AppTheme.RadiusLarge);
-                using var bg = new SolidBrush(Color.FromArgb(15, AppTheme.AccentCyan.R, AppTheme.AccentCyan.G, AppTheme.AccentCyan.B));
+
+                Color bgTint = _isDragOver
+                    ? Color.FromArgb(25, AppTheme.AccentCyan.R, AppTheme.AccentCyan.G, AppTheme.AccentCyan.B)
+                    : Color.FromArgb(10, AppTheme.AccentCyan.R, AppTheme.AccentCyan.G, AppTheme.AccentCyan.B);
+                using var bg = new SolidBrush(bgTint);
                 e.Graphics.FillPath(bg, path);
-                using var pen = new Pen(AppTheme.AccentCyan, 2f) { DashStyle = DashStyle.Dash };
+
+                float borderWidth = _isDragOver ? 2.5f : 1.5f;
+                Color borderColor = _isDragOver ? AppTheme.AccentCyan : Color.FromArgb(80, AppTheme.AccentCyan.R, AppTheme.AccentCyan.G, AppTheme.AccentCyan.B);
+                using var pen = new Pen(borderColor, borderWidth) { DashStyle = DashStyle.Dash };
                 e.Graphics.DrawPath(pen, path);
+
+                if (_isDragOver)
+                    AppTheme.PaintGlowBorder(e.Graphics, rect, AppTheme.RadiusLarge, AppTheme.AccentCyan, 0.3f);
             };
-            var dropLabel = new Label
+            _dropLabel = new Label
             {
                 Text = "📤  Drag & Drop files here\nor click to browse",
                 Font = AppTheme.BodyLarge,
@@ -90,53 +99,54 @@ namespace SecureVault.UI.UserControls
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            dropLabel.Click += BrowseFiles;
-            dropZone.Controls.Add(dropLabel);
+            _dropLabel.Click += BrowseFiles;
+            _dropZone.Controls.Add(_dropLabel);
 
-            // Drag-over feedback
-            dropZone.DragEnter += (s, e) =>
+            _dropZone.DragEnter += (s, e) =>
             {
                 if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
                 {
                     e.Effect = DragDropEffects.Copy;
-                    dropLabel.ForeColor = AppTheme.TextPrimary;
-                    dropLabel.Text = "📥  Drop files to upload!";
-                    dropZone.Invalidate();
+                    _isDragOver = true;
+                    _dropLabel.ForeColor = AppTheme.TextPrimary;
+                    _dropLabel.Text = "📥  Drop files to upload!";
+                    _dropZone.Invalidate();
                 }
             };
-            dropZone.DragLeave += (s, e) =>
+            _dropZone.DragLeave += (s, e) =>
             {
-                dropLabel.ForeColor = AppTheme.AccentCyan;
-                dropLabel.Text = "📤  Drag & Drop files here\nor click to browse";
-                dropZone.Invalidate();
+                _isDragOver = false;
+                _dropLabel.ForeColor = AppTheme.AccentCyan;
+                _dropLabel.Text = "📤  Drag & Drop files here\nor click to browse";
+                _dropZone.Invalidate();
             };
-            dropZone.DragDrop += async (s, e) => { if (e.Data?.GetData(DataFormats.FileDrop) is string[] files) await UploadFiles(files); };
-            dropZone.Click += BrowseFiles;
-            root.Controls.Add(dropZone, 0, 1);
+            _dropZone.DragDrop += async (s, e) =>
+            {
+                _isDragOver = false;
+                _dropZone.Invalidate();
+                if (e.Data?.GetData(DataFormats.FileDrop) is string[] files)
+                    await UploadFiles(files);
+            };
+            _dropZone.Click += BrowseFiles;
+            root.Controls.Add(_dropZone, 0, 1);
 
-            // Options: category, description, tags
+            // Options
             var optionsLayout = new TableLayoutPanel
             {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 4,
+                Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4,
                 BackColor = Color.Transparent
             };
             optionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
             optionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
-            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));  // Labels row
-            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Category + Desc inputs
-            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));  // Tags label
-            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46));  // Tags input
+            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+            optionsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
 
             optionsLayout.Controls.Add(new Label { Text = "Category", Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 0, 0);
             optionsLayout.Controls.Add(new Label { Text = "Description", Font = AppTheme.BodySmall, ForeColor = AppTheme.TextSecondary, BackColor = Color.Transparent, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft }, 1, 0);
 
-            _categoryCombo = new StyledComboBox
-            {
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0, 2, 10, 2)
-            };
+            _categoryCombo = new StyledComboBox { Dock = DockStyle.Fill, Margin = new Padding(0, 2, 10, 2) };
             _categoryCombo.Items.Add("None");
             try { foreach (var cat in _catService.GetCategories(SessionManager.CurrentUserID)) _categoryCombo.Items.Add(cat.CategoryName); } catch { }
             _categoryCombo.SelectedIndex = 0;
@@ -154,7 +164,7 @@ namespace SecureVault.UI.UserControls
             optionsLayout.SetColumnSpan(_tagsBox, 2);
             root.Controls.Add(optionsLayout, 0, 2);
 
-            // Browse + status row
+            // Browse + status
             var browseFlow = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight,
@@ -163,7 +173,7 @@ namespace SecureVault.UI.UserControls
             var browseBtn = new RoundedButton
             {
                 Text = "📁 Browse Files", Size = new Size(180, 44),
-                Margin = new Padding(0, 4, 15, 0)
+                Margin = new Padding(0, 4, 16, 0)
             };
             browseBtn.Click += BrowseFiles;
             browseFlow.Controls.Add(browseBtn);
@@ -172,16 +182,15 @@ namespace SecureVault.UI.UserControls
             {
                 Text = "", Font = AppTheme.BodyRegular, ForeColor = AppTheme.AccentTeal,
                 BackColor = Color.Transparent, AutoSize = true,
-                Margin = new Padding(0, 15, 0, 0)
+                Margin = new Padding(0, 16, 0, 0)
             };
             browseFlow.Controls.Add(_statusLabel);
             root.Controls.Add(browseFlow, 0, 3);
 
             // Progress bar
-            _progressBar = new ProgressBar
+            _progressBar = new ModernProgressBar
             {
-                Dock = DockStyle.Top, Height = 8,
-                Style = ProgressBarStyle.Continuous, Visible = false
+                Dock = DockStyle.Top, Height = 8, Visible = false
             };
             root.Controls.Add(_progressBar, 0, 4);
         }
@@ -229,8 +238,12 @@ namespace SecureVault.UI.UserControls
             }
 
             _progressBar.Visible = false;
-            _statusLabel.Text = $"✅ {ok} uploaded" + (fail > 0 ? $", ❌ {fail} failed" : "");
-            _statusLabel.ForeColor = fail > 0 ? AppTheme.Warning : AppTheme.Success;
+            _statusLabel.Text = "";
+
+            if (fail > 0)
+                ToastNotification.Show($"{ok} uploaded, {fail} failed", ToastType.Warning);
+            else
+                ToastNotification.Show($"✅ {ok} file(s) uploaded successfully!", ToastType.Success);
         }
     }
 }
